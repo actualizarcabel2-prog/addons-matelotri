@@ -429,7 +429,7 @@ def play_movie(params):
                    "Buscando enlaces para: {}...".format(title))
     pDialog.update(30)
 
-    links = resolve_movie(title, year, imdb_id)
+    links = resolve_movie(title, year, tmdb_id=movie_id, imdb_id=imdb_id)
     max_q = get_max_quality()
     links = filter_by_quality(links, max_q)
 
@@ -476,7 +476,7 @@ def play_episode(params):
                        title, int(season), int(episode)))
     pDialog.update(30)
 
-    links = resolve_episode(title, season, episode, imdb_id)
+    links = resolve_episode(title, season, episode, tmdb_id=tv_id, imdb_id=imdb_id)
     max_q = get_max_quality()
     links = filter_by_quality(links, max_q)
 

@@ -8,7 +8,7 @@ except ImportError:
     from urllib import quote
 
 # TMDb API v3 - registrar en themoviedb.org para key propia
-API_KEY = "a7cde1e0e3ae1ee3fea0688c82e557b5"
+API_KEY = "f090bb54758cabf231fb605d3e3e0468"
 BASE = "https://api.themoviedb.org/3"
 IMG = "https://image.tmdb.org/t/p/"
 
