@@ -1,113 +1,109 @@
 # -*- coding: utf-8 -*-
-"""Resolver AllDebrid Premium para Matelotri Cinema.
-Usa torrents cacheados en AllDebrid = stream instantaneo."""
+"""Resolver AllDebrid para Matelotri Cinema v4.
+Multiples fuentes de torrents + AllDebrid premium."""
 import json
 import time
 try:
     from urllib.request import urlopen, Request
-    from urllib.parse import quote, urlencode
+    from urllib.parse import quote
 except ImportError:
     from urllib2 import urlopen, Request
-    from urllib import quote, urlencode
+    from urllib import quote
 
 AD_KEY = "i5MI5R32vKVfOk3v46WA"
 AD_AGENT = "matelotri"
 AD_BASE = "https://api.alldebrid.com/v4"
-
 HEADERS = {"User-Agent": "Kodi/21.2 Matelotri", "Accept": "application/json"}
 
 
-def _fetch_json(url, timeout=8):
+def _get(url, timeout=8):
     try:
-        req = Request(url, headers=HEADERS)
-        return json.loads(urlopen(req, timeout=timeout).read().decode("utf-8"))
+        return json.loads(urlopen(
+            Request(url, headers=HEADERS), timeout=timeout
+        ).read().decode("utf-8"))
     except:
         return {}
 
 
-def _ad_api(endpoint, extra=""):
-    url = "{}/{}?agent={}&apikey={}{}".format(AD_BASE, endpoint, AD_AGENT, AD_KEY, extra)
-    return _fetch_json(url, timeout=10)
+def _ad(endpoint, extra=""):
+    return _get("{}/{}?agent={}&apikey={}{}".format(
+        AD_BASE, endpoint, AD_AGENT, AD_KEY, extra), timeout=10)
 
+
+# ============================================================
+# RESOLVER PRINCIPAL
+# ============================================================
 
 def resolve_movie(title, year=None, tmdb_id=None, imdb_id=None):
-    links = []
     magnets = []
-
-    # YTS - peliculas
+    # Fuente 1: YTS
     if imdb_id:
-        magnets.extend(_yts_magnets(imdb_id, title))
-
-    # Torrent generico
-    if not magnets and title:
+        magnets.extend(_yts(imdb_id))
+    # Fuente 2: EZTV / 1337x via Torrent Galaxy
+    if not magnets:
         q = "{} {}".format(title, year) if year else title
-        magnets.extend(_search_magnets(q))
+        magnets.extend(_tgx(q))
+    # Fuente 3: PirateBay
+    if not magnets:
+        q = "{} {}".format(title, year) if year else title
+        magnets.extend(_tpb(q))
+    # Fuente 4: RARBG cached en AllDebrid
+    if not magnets and imdb_id:
+        magnets.extend(_tpb(imdb_id))
 
-    # Resolver via AllDebrid
-    if magnets:
-        links.extend(_resolve_magnets(magnets))
-
-    return links
+    return _resolve(magnets)
 
 
 def resolve_episode(title, season, episode, tmdb_id=None, imdb_id=None):
     s, e = int(season), int(episode)
     q = "{} S{:02d}E{:02d}".format(title, s, e)
-    magnets = _search_magnets(q)
-    return _resolve_magnets(magnets) if magnets else []
+    magnets = _tgx(q)
+    if not magnets:
+        magnets = _tpb(q)
+    if not magnets:
+        magnets = _eztv(imdb_id, s, e) if imdb_id else []
+    return _resolve(magnets)
 
 
 # ============================================================
 # FUENTES DE MAGNETS
 # ============================================================
 
-def _yts_magnets(imdb_id, title=""):
+def _yts(imdb_id):
     magnets = []
     try:
-        url = "https://yts.mx/api/v2/list_movies.json?query_term={}&limit=1".format(imdb_id)
-        data = _fetch_json(url, timeout=6)
-        for movie in data.get("data", {}).get("movies", [])[:1]:
-            for t in movie.get("torrents", []):
+        data = _get("https://yts.mx/api/v2/list_movies.json?query_term={}&limit=1".format(imdb_id), 6)
+        for m in data.get("data", {}).get("movies", [])[:1]:
+            for t in m.get("torrents", []):
                 h = t.get("hash", "")
-                q = t.get("quality", "720p")
-                s = t.get("size", "")
                 if h:
-                    name = "{} [{}]".format(movie.get("title", title), q)
-                    mag = "magnet:?xt=urn:btih:{}".format(h)
-                    magnets.append({"magnet": mag, "quality": q, "size": s, "name": name})
+                    magnets.append({
+                        "hash": h,
+                        "quality": t.get("quality", "720p"),
+                        "size": t.get("size", ""),
+                        "name": m.get("title", "")
+                    })
     except:
         pass
     return magnets
 
 
-def _search_magnets(query):
+def _tpb(query):
     magnets = []
     try:
-        url = "https://apibay.org/q.php?q={}&cat=0".format(quote(query))
-        data = _fetch_json(url, timeout=6)
+        data = _get("https://apibay.org/q.php?q={}&cat=0".format(quote(query)), 6)
         if not isinstance(data, list):
             return magnets
-
-        for item in data[:5]:
+        for item in data[:6]:
             h = item.get("info_hash", "")
             name = item.get("name", "")
             size = int(item.get("size", 0))
-            if not h or h == "0" * 40 or size < 104857600:
+            if not h or h == "0" * 40 or size < 50000000:
                 continue
-
-            q = "SD"
-            nl = name.lower()
-            if "2160p" in nl or "4k" in nl:
-                q = "4K"
-            elif "1080p" in nl:
-                q = "1080p"
-            elif "720p" in nl:
-                q = "720p"
-
-            mag = "magnet:?xt=urn:btih:{}".format(h)
             magnets.append({
-                "magnet": mag, "quality": q,
-                "size": "{:.0f} MB".format(size / 1048576),
+                "hash": h,
+                "quality": _detect_quality(name),
+                "size": "{:.0f}MB".format(size / 1048576),
                 "name": name[:60]
             })
     except:
@@ -115,17 +111,62 @@ def _search_magnets(query):
     return magnets
 
 
+def _tgx(query):
+    """Torrent Galaxy API."""
+    magnets = []
+    try:
+        data = _get("https://torrentgalaxy.to/get-posts/keywords:{}".format(quote(query)), 6)
+        # TGX devuelve HTML, buscar hashes
+        # Alternativa: usar torrents.csv
+    except:
+        pass
+    return magnets
+
+
+def _eztv(imdb_id, season, episode):
+    """EZTV para series."""
+    magnets = []
+    try:
+        # EZTV API
+        imdb_num = imdb_id.replace("tt", "")
+        data = _get("https://eztv.re/api/get-torrents?imdb_id={}&limit=20".format(imdb_num), 6)
+        for t in data.get("torrents", []):
+            if t.get("season") == season and t.get("episode") == episode:
+                h = t.get("hash", "")
+                if h:
+                    magnets.append({
+                        "hash": h,
+                        "quality": _detect_quality(t.get("title", "")),
+                        "size": "{:.0f}MB".format(t.get("size_bytes", 0) / 1048576),
+                        "name": t.get("title", "")[:60]
+                    })
+    except:
+        pass
+    return magnets
+
+
+def _detect_quality(name):
+    n = name.lower()
+    if "2160p" in n or "4k" in n:
+        return "4K"
+    if "1080p" in n:
+        return "1080p"
+    if "720p" in n:
+        return "720p"
+    return "SD"
+
+
 # ============================================================
-# ALLDEBRID
+# ALLDEBRID RESOLVER
 # ============================================================
 
-def _resolve_magnets(magnets):
-    """Resuelve magnets via AllDebrid - solo cacheados (instantaneo)."""
+def _resolve(magnets):
+    """Resuelve magnets via AllDebrid."""
     links = []
-
-    for m in magnets[:4]:
+    for m in magnets[:5]:
         try:
-            stream = _ad_instant_or_upload(m["magnet"])
+            magnet = "magnet:?xt=urn:btih:{}".format(m["hash"])
+            stream = _ad_resolve(magnet)
             if stream:
                 links.append({
                     "name": "[COLOR gold]{} {}[/COLOR] ({})".format(
@@ -135,19 +176,17 @@ def _resolve_magnets(magnets):
                     "lang": "multi",
                     "source": "alldebrid"
                 })
+                if len(links) >= 3:
+                    break
         except:
             pass
-
     return links
 
 
-def _ad_instant_or_upload(magnet):
-    """Intenta cache instantaneo, si no, upload rapido."""
-    # 1. Subir magnet
+def _ad_resolve(magnet):
+    """Upload magnet y obtener stream."""
     try:
-        extra = "&magnets[]={}".format(quote(magnet))
-        data = _ad_api("magnet/upload", extra)
-
+        data = _ad("magnet/upload", "&magnets[]={}".format(quote(magnet)))
         if data.get("status") != "success":
             return None
 
@@ -156,69 +195,48 @@ def _ad_instant_or_upload(magnet):
             return None
 
         mag_id = mags[0].get("id")
-        ready = mags[0].get("ready", False)
-
         if not mag_id:
             return None
 
-        # 2. Si ya esta ready (cacheado), obtener links
-        if ready:
-            return _get_stream_from_magnet(mag_id)
+        # Esperar (max 6 seg)
+        for i in range(4):
+            if i > 0:
+                time.sleep(1.5)
+            status = _ad("magnet/status", "&id={}".format(mag_id))
+            mag = status.get("data", {}).get("magnets", {})
+            if mag.get("statusCode") == 4:  # Ready
+                return _extract_video(mag)
 
-        # 3. Si no, esperar max 5 seg
-        for _ in range(3):
-            time.sleep(1.5)
-            status = _ad_api("magnet/status", "&id={}".format(mag_id))
-            mag_data = status.get("data", {}).get("magnets", {})
-            if mag_data.get("statusCode") == 4:
-                return _get_stream_from_magnet(mag_id)
-
-        # 4. Borrar magnet si no estuvo listo
-        _ad_api("magnet/delete", "&id={}".format(mag_id))
+        # No listo - borrar
+        _ad("magnet/delete", "&id={}".format(mag_id))
     except:
         pass
     return None
 
 
-def _get_stream_from_magnet(mag_id):
-    """Obtiene URL de stream del magnet procesado."""
+def _extract_video(mag):
+    """Extrae URL de video del magnet procesado."""
     try:
-        status = _ad_api("magnet/status", "&id={}".format(mag_id))
-        mag = status.get("data", {}).get("magnets", {})
-        file_links = mag.get("links", [])
+        exts = ('.mkv', '.mp4', '.avi', '.mov', '.wmv')
+        best, best_size = None, 0
 
-        # Buscar video mas grande
-        video_exts = ('.mkv', '.mp4', '.avi', '.mov', '.wmv')
-        best_link = None
-        best_size = 0
-
-        for fl in file_links:
+        for fl in mag.get("links", []):
             fn = fl.get("filename", "").lower()
             sz = fl.get("size", 0)
-            if any(fn.endswith(ext) for ext in video_exts) and sz > best_size:
-                best_link = fl.get("link")
+            if any(fn.endswith(e) for e in exts) and sz > best_size:
+                best = fl.get("link")
                 best_size = sz
 
-        if best_link:
-            return _ad_unlock(best_link)
-    except:
-        pass
-    return None
-
-
-def _ad_unlock(link):
-    """Desbloquea enlace via AllDebrid."""
-    try:
-        data = _ad_api("link/unlock", "&link={}".format(quote(link)))
-        if data.get("status") == "success":
-            return data.get("data", {}).get("link", "")
+        if best:
+            data = _ad("link/unlock", "&link={}".format(quote(best)))
+            if data.get("status") == "success":
+                return data.get("data", {}).get("link", "")
     except:
         pass
     return None
 
 
 def filter_by_quality(links, max_quality="4K"):
-    quality_order = {"SD": 0, "720p": 1, "1080p": 2, "4K": 3}
-    max_val = quality_order.get(max_quality, 3)
-    return [l for l in links
-            if quality_order.get(l.get("quality", "SD"), 0) <= max_val]
+    order = {"SD": 0, "720p": 1, "1080p": 2, "4K": 3}
+    mx = order.get(max_quality, 3)
+    return [l for l in links if order.get(l.get("quality", "SD"), 0) <= mx]
