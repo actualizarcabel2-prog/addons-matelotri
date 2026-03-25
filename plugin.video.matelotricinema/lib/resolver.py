@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Resolver de enlaces gratuitos para Matelotri Cinema."""
+"""Resolver de enlaces gratuitos para Matelotri Cinema.
+Extrae URLs reproducibles de fuentes gratuitas."""
 import json
 import re
 try:
-    from urllib.request import urlopen, Request, quote
-    from urllib.parse import urlencode
+    from urllib.request import urlopen, Request
+    from urllib.parse import quote, urlencode
 except ImportError:
     from urllib2 import urlopen, Request
     from urllib import quote, urlencode
@@ -12,247 +13,288 @@ except ImportError:
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-    "Accept": "*/*",
-    "Referer": "https://vidsrc.xyz/"
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
 
-def _fetch(url, headers=None, timeout=15):
-    """Descarga contenido de URL."""
-    if not headers:
-        headers = HEADERS.copy()
+def _fetch(url, headers=None, timeout=12):
+    h = headers or HEADERS.copy()
     try:
-        req = Request(url, headers=headers)
-        resp = urlopen(req, timeout=timeout)
-        return resp.read().decode("utf-8", errors="ignore")
-    except Exception as e:
+        req = Request(url, headers=h)
+        return urlopen(req, timeout=timeout).read().decode("utf-8", errors="ignore")
+    except:
         return ""
 
 
+def _fetch_json(url, headers=None, timeout=12):
+    h = headers or HEADERS.copy()
+    h["Accept"] = "application/json"
+    try:
+        req = Request(url, headers=h)
+        return json.loads(urlopen(req, timeout=timeout).read().decode("utf-8"))
+    except:
+        return {}
+
+
 def resolve_movie(title, year=None, tmdb_id=None, imdb_id=None):
-    """Busca enlaces gratuitos para una película.
-    
-    Devuelve lista: [{name, url, quality, lang, source}]
-    """
+    """Busca enlaces para película. Devuelve lista de dicts."""
     links = []
 
-    # Fuente 1: VidSrc.xyz (con TMDb ID)
     if tmdb_id:
-        try:
-            vidsrc_links = _resolve_vidsrc_movie(tmdb_id)
-            links.extend(vidsrc_links)
-        except:
-            pass
+        links.extend(_source_vidsrc(tmdb_id, "movie"))
+        links.extend(_source_embedsu(tmdb_id, "movie"))
+        links.extend(_source_autoembed(tmdb_id, "movie"))
+        links.extend(_source_multiembed(tmdb_id, "movie"))
+        links.extend(_source_nontongo(tmdb_id, "movie"))
 
-    # Fuente 2: 2Embed (con IMDb ID)
     if imdb_id:
-        try:
-            embed_links = _resolve_2embed_movie(imdb_id)
-            links.extend(embed_links)
-        except:
-            pass
-
-    # Fuente 3: AutoEmbed (con TMDb ID)
-    if tmdb_id:
-        try:
-            auto_links = _resolve_autoembed_movie(tmdb_id)
-            links.extend(auto_links)
-        except:
-            pass
-
-    # Fuente 4: MoviesAPI (con TMDb ID)
-    if tmdb_id:
-        try:
-            mapi_links = _resolve_moviesapi_movie(tmdb_id)
-            links.extend(mapi_links)
-        except:
-            pass
-
-    # Fuente 5: SuperEmbed
-    if imdb_id:
-        try:
-            se_links = _resolve_superembed(imdb_id, "movie")
-            links.extend(se_links)
-        except:
-            pass
+        links.extend(_source_vidsrc_imdb(imdb_id, "movie"))
 
     return links
 
 
 def resolve_episode(title, season, episode, tmdb_id=None, imdb_id=None):
-    """Busca enlaces para un episodio de serie."""
+    """Busca enlaces para episodio."""
     links = []
-    s = int(season)
-    e = int(episode)
+    s, e = int(season), int(episode)
 
     if tmdb_id:
-        try:
-            links.extend(_resolve_vidsrc_tv(tmdb_id, s, e))
-        except:
-            pass
+        links.extend(_source_vidsrc(tmdb_id, "tv", s, e))
+        links.extend(_source_embedsu(tmdb_id, "tv", s, e))
+        links.extend(_source_autoembed(tmdb_id, "tv", s, e))
+        links.extend(_source_multiembed(tmdb_id, "tv", s, e))
 
     if imdb_id:
-        try:
-            links.extend(_resolve_2embed_tv(imdb_id, s, e))
-        except:
-            pass
-
-    if tmdb_id:
-        try:
-            links.extend(_resolve_autoembed_tv(tmdb_id, s, e))
-        except:
-            pass
-
-    if tmdb_id:
-        try:
-            links.extend(_resolve_moviesapi_tv(tmdb_id, s, e))
-        except:
-            pass
+        links.extend(_source_vidsrc_imdb(imdb_id, "tv", s, e))
 
     return links
 
 
 # ============================================================
-# FUENTES
+# FUENTES CON EXTRACCIÓN REAL
 # ============================================================
 
-def _resolve_vidsrc_movie(tmdb_id):
-    """VidSrc.xyz - fuente gratuita fiable."""
+def _source_vidsrc(tmdb_id, media_type, season=None, episode=None):
+    """VidSrc.icu - extrae m3u8 real."""
     links = []
-    url = "https://vidsrc.xyz/embed/movie/{}".format(tmdb_id)
-    links.append({
-        "name": "[COLOR gold]VidSrc[/COLOR] - HD",
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "vidsrc"
-    })
-    # VidSrc alternativo
-    url2 = "https://vidsrc.in/embed/movie/{}".format(tmdb_id)
-    links.append({
-        "name": "[COLOR gold]VidSrc.in[/COLOR] - HD",
-        "url": url2,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "vidsrc.in"
-    })
+    try:
+        if media_type == "movie":
+            url = "https://vidsrc.icu/embed/movie/{}".format(tmdb_id)
+        else:
+            url = "https://vidsrc.icu/embed/tv/{}/{}/{}".format(tmdb_id, season, episode)
+
+        html = _fetch(url)
+        if not html:
+            return links
+
+        # Buscar m3u8 o mp4 en el HTML
+        m3u8 = re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', html)
+        mp4 = re.findall(r'(https?://[^\s\'"]+\.mp4[^\s\'"]*)', html)
+
+        for u in m3u8[:2]:
+            links.append({
+                "name": "[COLOR gold]VidSrc[/COLOR] - HLS",
+                "url": u, "quality": "720p", "lang": "multi", "source": "vidsrc"
+            })
+        for u in mp4[:2]:
+            links.append({
+                "name": "[COLOR gold]VidSrc[/COLOR] - MP4",
+                "url": u, "quality": "720p", "lang": "multi", "source": "vidsrc"
+            })
+
+        # Buscar iframe src para seguir
+        iframes = re.findall(r'<iframe[^>]+src=["\']([^"\']+)["\']', html, re.I)
+        for iframe_url in iframes[:3]:
+            if iframe_url.startswith('//'):
+                iframe_url = 'https:' + iframe_url
+            sub_html = _fetch(iframe_url, {"User-Agent": HEADERS["User-Agent"],
+                                            "Referer": url})
+            if sub_html:
+                sub_m3u8 = re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', sub_html)
+                sub_mp4 = re.findall(r'(https?://[^\s\'"]+\.mp4[^\s\'"]*)', sub_html)
+                for u in sub_m3u8[:2]:
+                    links.append({
+                        "name": "[COLOR gold]VidSrc[/COLOR] - Stream",
+                        "url": u + "|Referer=" + quote(iframe_url),
+                        "quality": "720p", "lang": "multi", "source": "vidsrc"
+                    })
+                for u in sub_mp4[:2]:
+                    links.append({
+                        "name": "[COLOR gold]VidSrc[/COLOR] - Direct",
+                        "url": u + "|Referer=" + quote(iframe_url),
+                        "quality": "720p", "lang": "multi", "source": "vidsrc"
+                    })
+    except:
+        pass
     return links
 
 
-def _resolve_vidsrc_tv(tmdb_id, season, episode):
+def _source_vidsrc_imdb(imdb_id, media_type, season=None, episode=None):
+    """VidSrc con IMDB ID."""
     links = []
-    url = "https://vidsrc.xyz/embed/tv/{}/{}/{}".format(tmdb_id, season, episode)
-    links.append({
-        "name": "[COLOR gold]VidSrc[/COLOR] - S{:02d}E{:02d}".format(season, episode),
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "vidsrc"
-    })
-    url2 = "https://vidsrc.in/embed/tv/{}/{}/{}".format(tmdb_id, season, episode)
-    links.append({
-        "name": "[COLOR gold]VidSrc.in[/COLOR] - S{:02d}E{:02d}".format(season, episode),
-        "url": url2,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "vidsrc.in"
-    })
+    try:
+        if media_type == "movie":
+            url = "https://vidsrc.xyz/embed/movie/{}".format(imdb_id)
+        else:
+            url = "https://vidsrc.xyz/embed/tv/{}/{}-{}".format(imdb_id, season, episode)
+
+        html = _fetch(url)
+        if not html:
+            return links
+
+        m3u8 = re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', html)
+        mp4 = re.findall(r'(https?://[^\s\'"]+\.mp4[^\s\'"]*)', html)
+
+        for u in m3u8[:2]:
+            links.append({
+                "name": "[COLOR lime]VidSrc.xyz[/COLOR] - HLS",
+                "url": u, "quality": "720p", "lang": "multi", "source": "vidsrc.xyz"
+            })
+        for u in mp4[:2]:
+            links.append({
+                "name": "[COLOR lime]VidSrc.xyz[/COLOR] - MP4",
+                "url": u, "quality": "720p", "lang": "multi", "source": "vidsrc.xyz"
+            })
+
+        iframes = re.findall(r'<iframe[^>]+src=["\']([^"\']+)["\']', html, re.I)
+        for iframe_url in iframes[:3]:
+            if iframe_url.startswith('//'):
+                iframe_url = 'https:' + iframe_url
+            sub = _fetch(iframe_url, {"User-Agent": HEADERS["User-Agent"], "Referer": url})
+            if sub:
+                for u in re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', sub)[:2]:
+                    links.append({
+                        "name": "[COLOR lime]VidSrc.xyz[/COLOR] - Stream",
+                        "url": u + "|Referer=" + quote(iframe_url),
+                        "quality": "720p", "lang": "multi", "source": "vidsrc.xyz"
+                    })
+    except:
+        pass
     return links
 
 
-def _resolve_2embed_movie(imdb_id):
+def _source_embedsu(tmdb_id, media_type, season=None, episode=None):
+    """embed.su - extrae streams."""
     links = []
-    url = "https://www.2embed.cc/embed/{}".format(imdb_id)
-    links.append({
-        "name": "[COLOR lime]2Embed[/COLOR] - HD",
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "2embed"
-    })
+    try:
+        if media_type == "movie":
+            url = "https://embed.su/embed/movie/{}".format(tmdb_id)
+        else:
+            url = "https://embed.su/embed/tv/{}/{}/{}".format(tmdb_id, season, episode)
+
+        html = _fetch(url)
+        if not html:
+            return links
+
+        m3u8 = re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', html)
+        for u in m3u8[:3]:
+            links.append({
+                "name": "[COLOR cyan]EmbedSU[/COLOR] - HLS",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "embedsu"
+            })
+
+        # Buscar JSON con sources
+        json_matches = re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', html)
+        for u in json_matches[:3]:
+            links.append({
+                "name": "[COLOR cyan]EmbedSU[/COLOR] - Direct",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "embedsu"
+            })
+    except:
+        pass
     return links
 
 
-def _resolve_2embed_tv(imdb_id, season, episode):
+def _source_autoembed(tmdb_id, media_type, season=None, episode=None):
+    """AutoEmbed.cc"""
     links = []
-    url = "https://www.2embed.cc/embedtv/{}&s={}&e={}".format(imdb_id, season, episode)
-    links.append({
-        "name": "[COLOR lime]2Embed[/COLOR] - S{:02d}E{:02d}".format(season, episode),
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "2embed"
-    })
+    try:
+        if media_type == "movie":
+            url = "https://player.autoembed.cc/embed/movie/{}".format(tmdb_id)
+        else:
+            url = "https://player.autoembed.cc/embed/tv/{}/{}/{}".format(
+                tmdb_id, season, episode)
+
+        html = _fetch(url)
+        if not html:
+            return links
+
+        for u in re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', html)[:2]:
+            links.append({
+                "name": "[COLOR orange]AutoEmbed[/COLOR] - HLS",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "autoembed"
+            })
+        for u in re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', html)[:2]:
+            links.append({
+                "name": "[COLOR orange]AutoEmbed[/COLOR] - Direct",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "autoembed"
+            })
+    except:
+        pass
     return links
 
 
-def _resolve_autoembed_movie(tmdb_id):
+def _source_multiembed(tmdb_id, media_type, season=None, episode=None):
+    """MultiEmbed"""
     links = []
-    url = "https://player.autoembed.cc/embed/movie/{}".format(tmdb_id)
-    links.append({
-        "name": "[COLOR cyan]AutoEmbed[/COLOR] - HD",
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "autoembed"
-    })
+    try:
+        if media_type == "movie":
+            url = "https://multiembed.mov/?video_id={}&tmdb=1".format(tmdb_id)
+        else:
+            url = "https://multiembed.mov/?video_id={}&tmdb=1&s={}&e={}".format(
+                tmdb_id, season, episode)
+
+        html = _fetch(url)
+        if not html:
+            return links
+
+        for u in re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', html)[:2]:
+            links.append({
+                "name": "[COLOR yellow]MultiEmbed[/COLOR] - HLS",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "multiembed"
+            })
+        for u in re.findall(r'"file"\s*:\s*"(https?://[^"]+)"', html)[:2]:
+            links.append({
+                "name": "[COLOR yellow]MultiEmbed[/COLOR] - Direct",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "multiembed"
+            })
+    except:
+        pass
     return links
 
 
-def _resolve_autoembed_tv(tmdb_id, season, episode):
+def _source_nontongo(tmdb_id, media_type, season=None, episode=None):
+    """NontonGo - API directa."""
     links = []
-    url = "https://player.autoembed.cc/embed/tv/{}/{}/{}".format(tmdb_id, season, episode)
-    links.append({
-        "name": "[COLOR cyan]AutoEmbed[/COLOR] - S{:02d}E{:02d}".format(season, episode),
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "autoembed"
-    })
-    return links
+    try:
+        if media_type == "movie":
+            url = "https://www.nontongo.win/embed/movie/{}".format(tmdb_id)
+        else:
+            url = "https://www.nontongo.win/embed/tv/{}/{}/{}".format(
+                tmdb_id, season, episode)
 
+        html = _fetch(url)
+        if not html:
+            return links
 
-def _resolve_moviesapi_movie(tmdb_id):
-    links = []
-    url = "https://moviesapi.club/movie/{}".format(tmdb_id)
-    links.append({
-        "name": "[COLOR orange]MoviesAPI[/COLOR] - HD",
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "moviesapi"
-    })
-    return links
-
-
-def _resolve_moviesapi_tv(tmdb_id, season, episode):
-    links = []
-    url = "https://moviesapi.club/tv/{}-{}-{}".format(tmdb_id, season, episode)
-    links.append({
-        "name": "[COLOR orange]MoviesAPI[/COLOR] - S{:02d}E{:02d}".format(season, episode),
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "moviesapi"
-    })
-    return links
-
-
-def _resolve_superembed(imdb_id, media_type):
-    links = []
-    url = "https://multiembed.mov/?video_id={}&tmdb=1".format(imdb_id)
-    links.append({
-        "name": "[COLOR yellow]SuperEmbed[/COLOR] - HD",
-        "url": url,
-        "quality": "720p",
-        "lang": "multi",
-        "source": "superembed"
-    })
+        for u in re.findall(r'(https?://[^\s\'"]+\.m3u8[^\s\'"]*)', html)[:2]:
+            links.append({
+                "name": "[COLOR magenta]NontonGo[/COLOR] - HLS",
+                "url": u + "|Referer=" + quote(url),
+                "quality": "720p", "lang": "multi", "source": "nontongo"
+            })
+    except:
+        pass
     return links
 
 
 def filter_by_quality(links, max_quality="720p"):
-    """Filtra enlaces según calidad máxima."""
     quality_order = {"SD": 0, "720p": 1, "1080p": 2, "4K": 3}
     max_val = quality_order.get(max_quality, 1)
     return [l for l in links
