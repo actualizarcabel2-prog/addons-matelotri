@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="1.0.0" provider-name="Matelotri">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="script.module.requests"/>
+  </requires>
+
+  <extension point="xbmc.python.pluginsource" library="default.py">
+    <provides>video</provides>
+  </extension>
+
+  <extension point="xbmc.addon.metadata">
+    <description lang="es_ES">Matelotri Cinema - Tu cine en casa. Películas, Series, Anime, Documentales y más. Versión gratuita SD/720p con 3 días de prueba.[CR][COLOR gold]Contenido gratuito extraído de fuentes públicas.[/COLOR]</description>
+    <description lang="en_GB">Matelotri Cinema - Your home cinema. Movies, Series, Anime, Documentaries and more.</description>
+    <platform>all</platform>
+    <assets>
+      <icon>icon.png</icon>
+      <fanart>fanart.png</fanart>
+    </assets>
+  </extension>
+</addon>

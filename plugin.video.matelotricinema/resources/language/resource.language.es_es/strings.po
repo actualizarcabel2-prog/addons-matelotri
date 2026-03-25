@@ -1,0 +1,69 @@
+# Kodi language file
+# Addon Name: Matelotri Cinema
+# Addon id: plugin.video.matelotricinema
+
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es_ES\n"
+
+msgctxt "#30001"
+msgid "Películas"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Series"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Dibujos"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Anime"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Documentales"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Música"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Buscar"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Favoritos"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Ajustes"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Tu prueba gratuita ha expirado"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Populares"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Estrenos"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Mejor valoradas"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Por género"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Por año"
+msgstr ""

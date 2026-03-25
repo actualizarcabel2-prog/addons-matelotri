@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<settings>
+    <category label="General">
+        <setting id="tmdb_lang" type="enum" label="Idioma TMDb" values="es-ES|en-US|pt-BR|fr-FR|de-DE" default="0"/>
+        <setting id="items_per_page" type="enum" label="Resultados por página" values="20|40|60" default="0"/>
+    </category>
+    <category label="Cuenta">
+        <setting id="trial_start" type="text" label="Inicio prueba" default="" visible="false"/>
+        <setting id="is_premium" type="bool" label="Modo Premium" default="false"/>
+        <setting id="alldebrid_key" type="text" label="API Key AllDebrid" default="" enable="eq(-1,true)"/>
+    </category>
+    <category label="Reproductor">
+        <setting id="max_quality" type="enum" label="Calidad máxima" values="SD|720p|1080p|4K" default="1"/>
+        <setting id="autoplay" type="bool" label="Reproducción automática" default="true"/>
+    </category>
+</settings>
