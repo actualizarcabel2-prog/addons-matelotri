@@ -1,6 +1,6 @@
 # Kodi Media Center language file
-# Addon Name: Palantir
-# Addon id: plugin.video.palantir
+# Addon Name: Matelotri Cinema
+# Addon id: plugin.video.matelotri
 # Addon Provider: TierraMedia
 msgid ""
 msgstr ""
@@ -9,7 +9,7 @@ msgstr ""
 "POT-Creation-Date: 2020-09-21 11:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: TierraMedia\n"
-"Language-Team: Palantir\n"
+"Language-Team: Matelotri Cinema\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -692,7 +692,7 @@ msgid "Starting %s in %s seconds"
 msgstr ""
 
 
-# Palantir
+# Matelotri Cinema
 
 msgctxt "#30031"
 msgid "more..."
@@ -751,7 +751,7 @@ msgid "Unknown"
 msgstr ""
 
 msgctxt "#30046"
-msgid "Your current version of Palantir 3 is %s. Now available version %s."
+msgid "Your current version of Matelotri Cinema 3 is %s. Now available version %s."
 msgstr ""
 
 msgctxt "#30047"
@@ -787,11 +787,11 @@ msgid "One moment, please."
 msgstr ""
 
 msgctxt "#30056"
-msgid "We are sorry but your operating system does not support the pyCryptomode module needed to run Palantir"
+msgid "We are sorry but your operating system does not support the pyCryptomode module needed to run Matelotri Cinema"
 msgstr ""
 
 msgctxt "#30057"
-msgid "Sorry, Palantir 3 is not compatible with your Kodi"
+msgid "Sorry, Matelotri Cinema 3 is not compatible with your Kodi"
 msgstr ""
 
 msgctxt "#30058"
@@ -879,7 +879,7 @@ msgid "before %s minutes and %s seconds or the pin will expire."
 msgstr ""
 
 msgctxt "#30076"
-msgid "Your %s account has been paired with Palantir 3"
+msgid "Your %s account has been paired with Matelotri Cinema 3"
 msgstr ""
 
 msgctxt "#30077"
@@ -1137,7 +1137,7 @@ msgid "Concerts"
 msgstr ""
 
 msgctxt "#30145"
-msgid "Information about Palantir 3"
+msgid "Information about Matelotri Cinema 3"
 msgstr ""
 
 msgctxt "#30146"

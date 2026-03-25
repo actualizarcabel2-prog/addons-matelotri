@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Matelotri Cinema - Servicio de protección de marca.
-Restaura iconos y branding si Palantir3 actualiza y sobreescribe."""
+Restaura iconos y branding si Matelotri Cinema3 actualiza y sobreescribe."""
 import os
 import shutil
 import xbmc
@@ -98,9 +98,9 @@ def ensure_addon_xml():
     if os.path.exists(addon_xml):
         with open(addon_xml, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read()
-        if "palantir" in content.lower():
-            content = content.replace("plugin.video.palantir3", ADDON_ID)
-            content = content.replace("Palantir", "Matelotri Cinema")
+        if "matelotri" in content.lower():
+            content = content.replace("plugin.video.matelotricinema", ADDON_ID)
+            content = content.replace("Matelotri Cinema", "Matelotri Cinema")
             with open(addon_xml, "w", encoding="utf-8") as f:
                 f.write(content)
             log("addon.xml corregido")

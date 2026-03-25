@@ -120,8 +120,8 @@
 						<wrapmultiline>false</wrapmultiline>
 						<align>center</align>
 						<aligny>center</aligny>
-						<texturefocus colordiffuse="Ffd414fc">Palantir/masks/dialogconfirm.png</texturefocus>
-						<texturenofocus colordiffuse="E62D2E2E">Palantir/masks/dialogconfirm.png</texturenofocus>
+						<texturefocus colordiffuse="Ffd414fc">Matelotri Cinema/masks/dialogconfirm.png</texturefocus>
+						<texturenofocus colordiffuse="E62D2E2E">Matelotri Cinema/masks/dialogconfirm.png</texturenofocus>
 						<visible>true</visible>
 					</control> -->
                 </control>
