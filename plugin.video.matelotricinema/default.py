@@ -420,16 +420,17 @@ def play_movie(params):
     year = params.get("year", "")
     movie_id = params.get("movie_id", "")
 
-    # Obtener IMDB ID
+    # Obtener IMDB ID y titulo original (ingles)
     details = movie_details(movie_id)
     imdb_id = details.get("imdb_id", "")
+    original_title = details.get("original_title", title)
 
     pDialog = xbmcgui.DialogProgress()
     pDialog.create("[COLOR gold]Matelotri Cinema[/COLOR]",
                    "Buscando enlaces para: {}...".format(title))
     pDialog.update(30)
 
-    links = resolve_movie(title, year, tmdb_id=movie_id, imdb_id=imdb_id)
+    links = resolve_movie(original_title, year, tmdb_id=movie_id, imdb_id=imdb_id)
     max_q = get_max_quality()
     links = filter_by_quality(links, max_q)
 
@@ -465,10 +466,11 @@ def play_episode(params):
     tv_id = params.get("tv_id", "")
 
     details = tv_details(tv_id)
-    # TMDb no tiene IMDB ID directamente para TV, usar el ID
+    # Obtener nombre original (inglés) y IMDB ID
+    original_title = details.get("original_name", details.get("name", title))
     imdb_id = details.get("external_ids", {}).get("imdb_id", "")
     if not imdb_id:
-        imdb_id = "tv_{}".format(tv_id)
+        imdb_id = ""
 
     pDialog = xbmcgui.DialogProgress()
     pDialog.create("[COLOR gold]Matelotri Cinema[/COLOR]",
@@ -476,7 +478,7 @@ def play_episode(params):
                        title, int(season), int(episode)))
     pDialog.update(30)
 
-    links = resolve_episode(title, season, episode, tmdb_id=tv_id, imdb_id=imdb_id)
+    links = resolve_episode(original_title, season, episode, tmdb_id=tv_id, imdb_id=imdb_id)
     max_q = get_max_quality()
     links = filter_by_quality(links, max_q)
 
