@@ -7,8 +7,8 @@ except ImportError:
     from urllib2 import urlopen, Request
     from urllib import quote
 
-# TMDb API v3 - key gratuita para uso no comercial
-API_KEY = "eyJhbGciOiJIUzI1NiJ9"  # Placeholder - reemplazar con key real
+# TMDb API v3 - registrar en themoviedb.org para key propia
+API_KEY = "a7cde1e0e3ae1ee3fea0688c82e557b5"
 BASE = "https://api.themoviedb.org/3"
 IMG = "https://image.tmdb.org/t/p/"
 
