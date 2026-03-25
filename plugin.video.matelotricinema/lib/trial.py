@@ -64,10 +64,8 @@ def can_play():
 
 
 def get_max_quality():
-    """Devuelve calidad máxima permitida."""
-    if is_premium():
-        return "4K"
-    return "720p"  # Gratis = SD/720p
+    """Premium total - 4K y 1080p."""
+    return "4K"
 
 
 def get_status_text():
