@@ -1,21 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="1.0.0" provider-name="Matelotri">
+<addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="3.3.9" provider-name="Matelotri">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="script.module.inputstreamhelper" version="0.5.0"/>
+    <import addon="script.module.pycryptodome" version="3.4.3"/>
     <import addon="script.module.requests"/>
   </requires>
 
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
   </extension>
+  <extension point="xbmc.python.library" library="default.py"/>
+  <extension point="xbmc.service" library="service.py" start="startup"/>
+
+  <extension point="kodi.context.item">
+      <menu id="kodi.core.main">
+        <item library="context.py">
+          <label>[COLOR gold]Menú Matelotri Cinema...[/COLOR]</label>
+          <visible>String.Contains(ListItem.FolderPath,matelotricinema)</visible>
+        </item>
+      </menu>
+  </extension>
 
   <extension point="xbmc.addon.metadata">
-    <description lang="es_ES">Matelotri Cinema - Tu cine en casa. Películas, Series, Anime, Documentales y más. Versión gratuita SD/720p con 3 días de prueba.[CR][COLOR gold]Contenido gratuito extraído de fuentes públicas.[/COLOR]</description>
-    <description lang="en_GB">Matelotri Cinema - Your home cinema. Movies, Series, Anime, Documentaries and more.</description>
+    <description>Matelotri Cinema - Tu cine en casa.[CR]Películas, Series, Anime, Documentales y más.[CR][COLOR gold]Contenido premium con AllDebrid.[/COLOR]</description>
+    <disclaimer>[COLOR gold]Matelotri Cinema[/COLOR] - Addon gratuito de video.[CR]3 días de prueba gratis.</disclaimer>
     <platform>all</platform>
     <assets>
-      <icon>icon.png</icon>
-      <fanart>fanart.png</fanart>
+        <icon>icon.png</icon>
+        <fanart>fanart.gif</fanart>
     </assets>
   </extension>
 </addon>
