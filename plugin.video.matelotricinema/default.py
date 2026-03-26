@@ -132,7 +132,7 @@ def api_get(endpoint):
     url = "{}/{}/{}".format(server.rstrip("/"), key, endpoint)
     try:
         req = Request(url, headers={"User-Agent": "Kodi/21.2"})
-        resp = urlopen(req, timeout=12)
+        resp = urlopen(req, timeout=45)
         return json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         xbmcgui.Dialog().notification("Matelotri Cinema",
