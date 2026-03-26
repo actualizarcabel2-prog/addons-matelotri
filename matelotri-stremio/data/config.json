@@ -1,0 +1,12 @@
+{
+  "TMDB_KEY": "f090bb54758cabf231fb605d3e3e0468",
+  "AD_KEY": "i5MI5R32vKVfOk3v46WA",
+  "ADMIN_USER": "admin",
+  "ADMIN_PASS": "cabel1n3",
+  "ACCESS_PASS": "cabel1n3",
+  "TRIAL_DAYS": 30,
+  "NAME": "Matelotri Cinema",
+  "VERSION": "2.0.0",
+  "LOGO": "https://raw.githubusercontent.com/actualizarcabel2-prog/addons-matelotri/main/imagenes/matelotri_cinema_icon_1774476103177.png",
+  "BG": "https://raw.githubusercontent.com/actualizarcabel2-prog/addons-matelotri/main/imagenes/matelotri_cinema_fanart_1774476117417.png"
+}
