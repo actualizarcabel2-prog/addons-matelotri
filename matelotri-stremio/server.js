@@ -220,88 +220,174 @@ function dashboardHTML(users) {
     const active = userList.filter(u => u.active).length;
     const premium = userList.filter(u => u.premium).length;
     const trial = userList.filter(u => !u.premium && u.active).length;
+    const totalReqs = userList.reduce((s, u) => s + (u.requests || 0), 0);
     
-    let rows = "";
-    for (const u of userList.sort((a,b) => new Date(b.lastSeen) - new Date(a.lastSeen))) {
-        const status = !u.active ? "🔴 Desactivado" : u.premium ? "💎 Premium" : "🟢 Trial";
-        const expires = u.premium && u.premiumExpires ? new Date(u.premiumExpires).toLocaleDateString() : "-";
-        const trialDays = Math.max(0, CONFIG.TRIAL_DAYS - Math.floor((Date.now() - new Date(u.trialStart)) / 86400000));
-        rows += `<tr>
-            <td>${u.name}</td><td>${u.id.slice(0,10)}...</td>
-            <td>${status}</td><td>${trialDays}d</td><td>${expires}</td>
-            <td>${u.requests}</td><td>${new Date(u.lastSeen).toLocaleString()}</td>
-            <td>
-                <button class="btn-sm ${u.active?'btn-red':'btn-green'}" onclick="toggleUser('${u.id}')">${u.active?'Desactivar':'Activar'}</button>
-                <button class="btn-sm btn-gold" onclick="setPremium('${u.id}')">Premium</button>
-            </td></tr>`;
+    // Agrupar por mes de registro
+    const monthGroups = {};
+    for (const u of userList) {
+        const d = new Date(u.created);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const label = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+        if (!monthGroups[key]) monthGroups[key] = { label, users: [] };
+        monthGroups[key].users.push(u);
+    }
+    
+    // Generar secciones mensuales
+    let monthSections = "";
+    const sortedMonths = Object.keys(monthGroups).sort().reverse();
+    for (const key of sortedMonths) {
+        const g = monthGroups[key];
+        let rows = "";
+        for (const u of g.users.sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen))) {
+            const status = !u.active ? "🔴 Off" : u.premium ? "💎 Premium" : "🟢 Trial";
+            const statusClass = !u.active ? "st-off" : u.premium ? "st-prem" : "st-trial";
+            const trialDays = Math.max(0, CONFIG.TRIAL_DAYS - Math.floor((Date.now() - new Date(u.trialStart)) / 86400000));
+            const expires = u.premium && u.premiumExpires ? new Date(u.premiumExpires).toLocaleDateString('es-ES') : "-";
+            const created = new Date(u.created).toLocaleDateString('es-ES');
+            const lastSeen = new Date(u.lastSeen).toLocaleString('es-ES');
+            const phone = u.phone || "";
+            const pass = u.generatedPass || "-";
+            rows += `<tr>
+                <td><b>${u.name}</b><br><small style="color:#666">${u.id.slice(0,8)}</small></td>
+                <td><span class="${statusClass}">${status}</span></td>
+                <td>${phone || '<span style="color:#555">-</span>'}</td>
+                <td>${pass}</td>
+                <td>${created}</td>
+                <td>${trialDays}d</td>
+                <td>${expires}</td>
+                <td>${u.requests}</td>
+                <td><small>${lastSeen}</small></td>
+                <td class="actions">
+                    <button class="btn-sm ${u.active?'btn-red':'btn-green'}" onclick="toggleUser('${u.id}')">${u.active?'⏸':'▶'}</button>
+                    <button class="btn-sm btn-gold" onclick="setPremium('${u.id}')">💎</button>
+                    <button class="btn-sm btn-blue" onclick="editUser('${u.id}','${u.name}','${phone}')">✏️</button>
+                    <button class="btn-sm btn-red" onclick="deleteUser('${u.id}','${u.name}')">🗑</button>
+                </td></tr>`;
+        }
+        monthSections += `
+        <div class="month-folder">
+            <div class="month-header" onclick="this.parentElement.classList.toggle('open')">
+                <span class="folder-icon">📁</span>
+                <span class="month-title">${g.label.charAt(0).toUpperCase() + g.label.slice(1)}</span>
+                <span class="month-count">${g.users.length} clientes</span>
+                <span class="arrow">▼</span>
+            </div>
+            <div class="month-body">
+                <table><thead><tr>
+                    <th>Cliente</th><th>Estado</th><th>📱 Teléfono</th><th>🔑 Pass</th>
+                    <th>📅 Registro</th><th>Trial</th><th>Expira</th><th>Reqs</th>
+                    <th>Última vez</th><th>Acciones</th>
+                </tr></thead><tbody>${rows}</tbody></table>
+            </div>
+        </div>`;
     }
     
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${CONFIG.NAME} — Admin</title><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',sans-serif;background:#0a0a15;color:#e0e0e0;min-height:100vh}
-.header{background:linear-gradient(135deg,#0d001a,#1a0033,#330066);padding:25px;text-align:center;border-bottom:2px solid #ffd700}
-.header h1{color:#ffd700;font-size:1.8em;text-shadow:0 2px 10px rgba(255,215,0,.3)}
-.header p{color:#999;margin-top:4px;font-size:.9em}
-.container{max-width:1100px;margin:20px auto;padding:0 15px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:15px 0}
-.stat{text-align:center;padding:18px;background:linear-gradient(135deg,#16213e,#1a1a2e);border-radius:12px;border:1px solid #222}
-.stat .num{font-size:2.2em;color:#ffd700;font-weight:bold}
-.stat .label{color:#888;font-size:.8em;margin-top:4px}
-.card{background:#12121f;border-radius:12px;padding:18px;margin:15px 0;border:1px solid #1e1e3a}
-.card h3{color:#ffd700;margin-bottom:12px;font-size:1.1em}
-table{width:100%;border-collapse:collapse;font-size:.85em}
-th{background:#1a1a2e;color:#ffd700;padding:10px 8px;text-align:left;border-bottom:2px solid #333}
-td{padding:8px;border-bottom:1px solid #1a1a2a}
-tr:hover{background:#1a1a2e}
-.btn-sm{padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:.75em;margin:2px}
+.header{background:linear-gradient(135deg,#0d001a,#1a0033,#330066);padding:20px;text-align:center;border-bottom:2px solid #ffd700;position:sticky;top:0;z-index:100}
+.header h1{color:#ffd700;font-size:1.6em;text-shadow:0 2px 10px rgba(255,215,0,.3)}
+.header p{color:#999;margin-top:3px;font-size:.85em}
+.container{max-width:1400px;margin:15px auto;padding:0 12px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:12px 0}
+.stat{text-align:center;padding:14px 8px;background:linear-gradient(135deg,#16213e,#1a1a2e);border-radius:10px;border:1px solid #222}
+.stat .num{font-size:1.8em;color:#ffd700;font-weight:bold}
+.stat .label{color:#888;font-size:.75em;margin-top:3px}
+.card{background:#12121f;border-radius:10px;padding:14px;margin:12px 0;border:1px solid #1e1e3a}
+.card h3{color:#ffd700;margin-bottom:10px;font-size:1em}
+.topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;background:linear-gradient(135deg,#6200ea,#9c27b0);
+color:white;border:none;border-radius:8px;cursor:pointer;font-size:.85em}
+.btn:hover{box-shadow:0 4px 15px rgba(98,0,234,.4);transform:translateY(-1px);transition:.2s}
+.btn-restart{background:linear-gradient(135deg,#c62828,#e53935)}
+.btn-restart:hover{box-shadow:0 4px 15px rgba(198,40,40,.5)}
+.url-box{background:#080810;border:1px solid #ffd700;border-radius:8px;padding:8px 12px;
+font-family:monospace;font-size:.8em;color:#ffd700;word-break:break-all;flex:1}
+.month-folder{background:#0e0e1a;border:1px solid #1a1a2e;border-radius:10px;margin:8px 0;overflow:hidden}
+.month-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;background:linear-gradient(135deg,#12122a,#1a1a3a);transition:.2s}
+.month-header:hover{background:linear-gradient(135deg,#1a1a3a,#25254a)}
+.folder-icon{font-size:1.2em}
+.month-title{flex:1;font-weight:600;color:#e0c050}
+.month-count{color:#888;font-size:.8em;background:#1a1a2e;padding:3px 10px;border-radius:12px}
+.arrow{color:#666;transition:transform .3s}
+.month-folder.open .arrow{transform:rotate(180deg)}
+.month-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.month-folder.open .month-body{max-height:2000px}
+table{width:100%;border-collapse:collapse;font-size:.78em}
+th{background:#15152a;color:#ffd700;padding:8px 6px;text-align:left;border-bottom:2px solid #333;position:sticky;top:0}
+td{padding:6px;border-bottom:1px solid #151520}
+tr:hover{background:rgba(255,215,0,.03)}
+.btn-sm{padding:3px 8px;border:none;border-radius:5px;cursor:pointer;font-size:.7em;margin:1px}
 .btn-red{background:#8b0000;color:white}.btn-green{background:#006400;color:white}
-.btn-gold{background:#b8860b;color:white}
-.btn{display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#6200ea,#9c27b0);
-color:white;border:none;border-radius:8px;cursor:pointer;font-size:.95em;margin:5px}
-.btn:hover{box-shadow:0 4px 15px rgba(98,0,234,.4)}
-.url-box{background:#080810;border:1px solid #ffd700;border-radius:8px;padding:10px;
-font-family:monospace;font-size:.85em;color:#ffd700;word-break:break-all;margin:8px 0}
-.login-box{max-width:400px;margin:80px auto;text-align:center}
-.login-box input{width:100%;padding:12px;margin:8px 0;background:#1a1a2e;border:1px solid #333;
-border-radius:8px;color:#e0e0e0;font-size:1em}
-@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)} table{font-size:.75em}}
+.btn-gold{background:#b8860b;color:white}.btn-blue{background:#1565c0;color:white}
+.st-off{color:#ff4444}.st-prem{color:#ffd700}.st-trial{color:#4caf50}
+.actions{white-space:nowrap}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#12121f;border:1px solid #333;border-radius:12px;padding:24px;max-width:400px;width:90%}
+.modal-box h3{color:#ffd700;margin-bottom:15px}
+.modal-box input{width:100%;padding:10px;margin:6px 0;background:#1a1a2e;border:1px solid #333;border-radius:8px;color:#e0e0e0;font-size:.9em}
+.modal-box button{margin:4px;padding:8px 16px;border:none;border-radius:8px;cursor:pointer}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4caf50;margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@media(max-width:768px){.stats{grid-template-columns:repeat(3,1fr)} table{font-size:.7em} .topbar{flex-direction:column}}
 </style></head><body>
 <div class="header">
 <h1>🎬 ${CONFIG.NAME}</h1>
-<p>Panel de Administración — v${CONFIG.VERSION}</p>
+<p>Panel de Administración — v${CONFIG.VERSION} <span class="status-dot"></span>Online</p>
 </div>
 <div class="container">
 <div class="stats">
-<div class="stat"><div class="num">${userList.length}</div><div class="label">Total Usuarios</div></div>
+<div class="stat"><div class="num">${userList.length}</div><div class="label">Total Clientes</div></div>
 <div class="stat"><div class="num">${active}</div><div class="label">Activos</div></div>
 <div class="stat"><div class="num">${premium}</div><div class="label">Premium</div></div>
 <div class="stat"><div class="num">${trial}</div><div class="label">Trial</div></div>
+<div class="stat"><div class="num">${totalReqs}</div><div class="label">Peticiones</div></div>
 </div>
-<div class="card">
-<h3>🔗 URL del Addon (para Stremio)</h3>
+<div class="topbar">
 <div class="url-box" id="addonUrl">Cargando...</div>
 <button class="btn" onclick="copyUrl()">📋 Copiar</button>
+<button class="btn btn-restart" onclick="restartCloud()">🔄 Reiniciar Nube</button>
+<button class="btn" onclick="location.reload()">🔃 Refresh</button>
 </div>
 <div class="card">
-<h3>👥 Usuarios</h3>
-<table><thead><tr><th>Nombre</th><th>ID</th><th>Estado</th><th>Trial</th><th>Expira</th><th>Reqs</th><th>Última vez</th><th>Acciones</th></tr></thead>
-<tbody>${rows}</tbody></table>
+<h3>📂 Clientes por mes de registro</h3>
+${monthSections || '<p style="color:#666;padding:20px;text-align:center">No hay clientes registrados</p>'}
 </div>
 <div class="card">
-<h3>⚙️ Configuración</h3>
+<h3>⚙️ Servidor</h3>
 <p>AllDebrid: <code>${CONFIG.AD_KEY.slice(0,8)}...</code> | TMDb: <code>${CONFIG.TMDB_KEY.slice(0,8)}...</code></p>
-<p>Trial: ${CONFIG.TRIAL_DAYS} días | Pass acceso: <code>${CONFIG.ACCESS_PASS}</code></p>
-<p>Uptime: <span id="up">0</span> min</p>
+<p>Trial: ${CONFIG.TRIAL_DAYS} días | Acceso: <code>${CONFIG.ACCESS_PASS}</code> | Uptime: <span id="up">0</span> min</p>
+</div>
+</div>
+<!-- Modal editar usuario -->
+<div class="modal" id="editModal">
+<div class="modal-box">
+<h3>✏️ Editar Cliente</h3>
+<input id="editName" placeholder="Nombre del cliente">
+<input id="editPhone" placeholder="📱 Teléfono" type="tel">
+<input id="editPass" placeholder="🔑 Contraseña generada" readonly>
+<button class="btn" onclick="saveUser()">💾 Guardar</button>
+<button class="btn btn-restart" onclick="closeModal()">✕ Cerrar</button>
+<button class="btn btn-gold" onclick="generatePass()">🎲 Generar Pass</button>
 </div>
 </div>
 <script>
-const start=${Date.now()};
+const start=${Date.now()};let editingId="";
 setInterval(()=>document.getElementById("up").textContent=Math.floor((Date.now()-start)/60000),10000);
 document.getElementById("addonUrl").textContent=location.origin+"/${CONFIG.ACCESS_PASS}/manifest.json";
-function copyUrl(){navigator.clipboard.writeText(document.getElementById("addonUrl").textContent).then(()=>alert("Copiado!"))}
-function toggleUser(id){fetch("/api/admin/toggle?id="+id+"&pass=${CONFIG.ADMIN_PASS}").then(()=>location.reload())}
+// Abrir todas las carpetas del mes actual
+document.querySelectorAll('.month-folder').forEach((f,i)=>{if(i===0)f.classList.add('open')});
+function copyUrl(){navigator.clipboard.writeText(document.getElementById("addonUrl").textContent).then(()=>alert("✅ URL copiada!"))}
+function toggleUser(id){if(confirm("¿Cambiar estado de este cliente?")){fetch("/api/admin/toggle?id="+id+"&pass=${CONFIG.ADMIN_PASS}").then(()=>location.reload())}}
 function setPremium(id){const d=prompt("Días premium (30/90/365):");if(d)fetch("/api/admin/premium?id="+id+"&days="+d+"&pass=${CONFIG.ADMIN_PASS}").then(()=>location.reload())}
+function editUser(id,name,phone){editingId=id;document.getElementById("editName").value=name||"";document.getElementById("editPhone").value=phone||"";document.getElementById("editPass").value="";document.getElementById("editModal").classList.add("show")}
+function closeModal(){document.getElementById("editModal").classList.remove("show")}
+function generatePass(){document.getElementById("editPass").value="MC-"+Math.random().toString(36).slice(2,8).toUpperCase()}
+function saveUser(){fetch("/api/admin/edit?id="+editingId+"&name="+encodeURIComponent(document.getElementById("editName").value)+"&phone="+encodeURIComponent(document.getElementById("editPhone").value)+"&pass="+document.getElementById("editPass").value+"&adminpass=${CONFIG.ADMIN_PASS}").then(()=>{closeModal();location.reload()})}
+function deleteUser(id,name){if(confirm("🗑 ¿Eliminar a "+name+"? No se puede deshacer.")){fetch("/api/admin/delete?id="+id+"&pass=${CONFIG.ADMIN_PASS}").then(()=>location.reload())}}
+function restartCloud(){if(confirm("⚠️ ¿Reiniciar el servidor? Los clientes perderán conexión brevemente.")){fetch("/api/admin/restart?pass=${CONFIG.ADMIN_PASS}").then(r=>r.json()).then(d=>{alert("🔄 "+d.message);setTimeout(()=>location.reload(),3000)})}}
 </script></body></html>`;
 }
 
@@ -380,6 +466,43 @@ const server = http.createServer(async (req, res) => {
         }
         res.writeHead(200, { "Content-Type": "application/json" });
         return res.end(JSON.stringify({ ok: true }));
+    }
+    
+    // Editar usuario (nombre, teléfono, contraseña)
+    if (p === "/api/admin/edit") {
+        if (url.searchParams.get("adminpass") !== CONFIG.ADMIN_PASS) return res.writeHead(403) && res.end();
+        const users = loadUsers();
+        const id = url.searchParams.get("id");
+        if (users[id]) {
+            const name = url.searchParams.get("name");
+            const phone = url.searchParams.get("phone");
+            const pass = url.searchParams.get("pass");
+            if (name) users[id].name = name;
+            if (phone) users[id].phone = phone;
+            if (pass) users[id].generatedPass = pass;
+            saveUsers(users);
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ ok: true }));
+    }
+    
+    // Eliminar usuario
+    if (p === "/api/admin/delete") {
+        if (url.searchParams.get("pass") !== CONFIG.ADMIN_PASS) return res.writeHead(403) && res.end();
+        const users = loadUsers();
+        const id = url.searchParams.get("id");
+        if (users[id]) { delete users[id]; saveUsers(users); }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ ok: true }));
+    }
+    
+    // Reiniciar servidor
+    if (p === "/api/admin/restart") {
+        if (url.searchParams.get("pass") !== CONFIG.ADMIN_PASS) return res.writeHead(403) && res.end();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true, message: "Servidor reiniciando..." }));
+        setTimeout(() => { process.exit(0); }, 1000);
+        return;
     }
     
     if (p === "/api/stats") {
