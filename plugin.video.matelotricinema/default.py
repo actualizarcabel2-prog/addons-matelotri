@@ -171,6 +171,18 @@ def main_menu():
         ("🎓 Docs Series", "catalog/series/matelotri-series-doc.json", "documentales"),
         ("🎭 Series Drama", "catalog/series/matelotri-series-drama.json", "series"),
         ("🕵️ Series Crimen", "catalog/series/matelotri-series-crimen.json", "series"),
+        # --- PLATAFORMAS PELÍCULAS ---
+        ("🔴 Netflix Películas", "catalog/movie/matelotri-netflix.json", "peliculas"),
+        ("🔵 Amazon Películas", "catalog/movie/matelotri-amazon.json", "peliculas"),
+        ("🏰 Disney+ Películas", "catalog/movie/matelotri-disney.json", "peliculas"),
+        ("💜 HBO Max Películas", "catalog/movie/matelotri-hbo.json", "peliculas"),
+        ("🍎 Apple TV+ Películas", "catalog/movie/matelotri-apple.json", "peliculas"),
+        # --- PLATAFORMAS SERIES ---
+        ("🔴 Netflix Series", "catalog/series/matelotri-netflix-series.json", "series"),
+        ("🔵 Amazon Series", "catalog/series/matelotri-amazon-series.json", "series"),
+        ("🏰 Disney+ Series", "catalog/series/matelotri-disney-series.json", "series"),
+        ("💜 HBO Series", "catalog/series/matelotri-hbo-series.json", "series"),
+        ("🍎 Apple TV+ Series", "catalog/series/matelotri-apple-series.json", "series"),
         # --- HERRAMIENTAS ---
         ("🔍 Buscar Película", "search_movie", "buscar"),
         ("🔍 Buscar Serie", "search_series", "buscar"),

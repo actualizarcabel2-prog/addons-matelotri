@@ -158,6 +158,18 @@ function getManifest(deviceId) {
             { type: "series", id: "matelotri-series-doc", name: "🎓 Docs Series", extra: [{ name: "skip" }] },
             { type: "series", id: "matelotri-series-drama", name: "🎭 Series Drama", extra: [{ name: "skip" }] },
             { type: "series", id: "matelotri-series-crimen", name: "🕵️ Series Crimen", extra: [{ name: "skip" }] },
+            // Plataformas Películas
+            { type: "movie", id: "matelotri-netflix", name: "🔴 Netflix Películas", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-amazon", name: "🔵 Amazon Películas", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-disney", name: "🏰 Disney+ Películas", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-hbo", name: "💜 HBO Max Películas", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-apple", name: "🍎 Apple TV+ Películas", extra: [{ name: "skip" }] },
+            // Plataformas Series
+            { type: "series", id: "matelotri-netflix-series", name: "🔴 Netflix Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-amazon-series", name: "🔵 Amazon Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-disney-series", name: "🏰 Disney+ Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-hbo-series", name: "💜 HBO Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-apple-series", name: "🍎 Apple TV+ Series", extra: [{ name: "skip" }] },
             // Búsqueda
             { type: "movie", id: "matelotri-buscar", name: "🔍 Buscar Película", extra: [{ name: "search", isRequired: true }] },
             { type: "series", id: "matelotri-buscar-series", name: "🔍 Buscar Serie", extra: [{ name: "search", isRequired: true }] },
@@ -257,6 +269,18 @@ const GENRE_MAP = {
     "matelotri-series-doc": { endpoint: "discover/tv", params: { with_genres: 99 } },
     "matelotri-series-drama": { endpoint: "discover/tv", params: { with_genres: 18 } },
     "matelotri-series-crimen": { endpoint: "discover/tv", params: { with_genres: 80 } },
+    // Plataformas Películas (with_watch_providers + watch_region=ES)
+    "matelotri-netflix": { endpoint: "discover/movie", params: { with_watch_providers: 8, watch_region: "ES" } },
+    "matelotri-amazon": { endpoint: "discover/movie", params: { with_watch_providers: 119, watch_region: "ES" } },
+    "matelotri-disney": { endpoint: "discover/movie", params: { with_watch_providers: 337, watch_region: "ES" } },
+    "matelotri-hbo": { endpoint: "discover/movie", params: { with_watch_providers: 384, watch_region: "ES" } },
+    "matelotri-apple": { endpoint: "discover/movie", params: { with_watch_providers: 350, watch_region: "ES" } },
+    // Plataformas Series
+    "matelotri-netflix-series": { endpoint: "discover/tv", params: { with_watch_providers: 8, watch_region: "ES" } },
+    "matelotri-amazon-series": { endpoint: "discover/tv", params: { with_watch_providers: 119, watch_region: "ES" } },
+    "matelotri-disney-series": { endpoint: "discover/tv", params: { with_watch_providers: 337, watch_region: "ES" } },
+    "matelotri-hbo-series": { endpoint: "discover/tv", params: { with_watch_providers: 384, watch_region: "ES" } },
+    "matelotri-apple-series": { endpoint: "discover/tv", params: { with_watch_providers: 350, watch_region: "ES" } },
 };
 
 async function handleCatalog(type, id, extra) {
