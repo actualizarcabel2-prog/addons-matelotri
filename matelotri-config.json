@@ -1,5 +1,5 @@
 {
-    "server": "http://209.38.230.244:7000",
+    "server": "https://pump-iowa-train-bizrate.trycloudflare.com",
     "version": "2.0.0",
     "access_key": "cabel1n3",
     "message": "",

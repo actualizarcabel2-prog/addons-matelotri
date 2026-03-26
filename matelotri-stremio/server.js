@@ -340,19 +340,17 @@ async function handleCatalog(type, id, extra) {
 }
 
 async function handleStream(type, id) {
-    // Filtro: español, sin cam/scr, ordenar por calidad
-    const torrentioConfig = `sort=qualitysize|language=spanish|qualityfilter=other,scr,cam`;
-    // Cloudflare Worker proxy (evita bloqueo IP)
-    const workerUrl = `https://torrentio-proxy.actualizarcabel2.workers.dev/${torrentioConfig}/alldebrid=${CONFIG.AD_KEY}/stream/${type}/${id}.json`;
+    // AllDebrid premium — streams directos
+    const url = `https://torrentio.strem.fun/alldebrid=${CONFIG.AD_KEY}/stream/${type}/${id}.json`;
+    const curlCmd = process.platform === "win32" ? "curl.exe" : "curl";
     
     try {
-        const data = await fetchJSON(workerUrl);
-        if (data.streams && data.streams.length > 0) {
-            return { streams: data.streams.map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
-        }
-    } catch (e) {}
-    
-    return { streams: [] };
+        const result = execSync(`${curlCmd} -sL -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" "${url}"`, { timeout: 25000, windowsHide: true });
+        const data = JSON.parse(result.toString());
+        return { streams: (data.streams || []).map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
+    } catch (e) {
+        return { streams: [] };
+    }
 }
 
 // ============================================================
