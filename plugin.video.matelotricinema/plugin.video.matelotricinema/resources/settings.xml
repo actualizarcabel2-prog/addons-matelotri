@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <category label="Conexión">
+    <setting id="server_url" type="text" label="URL del servidor" default="http://192.168.1.100:7000"/>
+    <setting id="access_key" type="text" label="Clave de acceso" default="cabel1n3"/>
+  </category>
+  <category label="Cuenta">
+    <setting id="is_premium" type="bool" label="Premium activado" default="false"/>
+    <setting id="user_name" type="text" label="Tu nombre" default=""/>
+  </category>
+</settings>
