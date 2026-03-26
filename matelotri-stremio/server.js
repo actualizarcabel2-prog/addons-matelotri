@@ -342,26 +342,17 @@ async function handleCatalog(type, id, extra) {
 async function handleStream(type, id) {
     // Filtro: español, sin cam/scr, ordenar por calidad
     const torrentioConfig = `sort=qualitysize|language=spanish|qualityfilter=other,scr,cam`;
-    // Usar proxy local (puerto 7001) para evitar bloqueo Cloudflare
-    const proxyUrl = `http://127.0.0.1:7001/${torrentioConfig}/alldebrid=${CONFIG.AD_KEY}/stream/${type}/${id}.json`;
-    const directUrl = `https://torrentio.strem.fun/${torrentioConfig}/alldebrid=${CONFIG.AD_KEY}/stream/${type}/${id}.json`;
+    // Cloudflare Worker proxy (evita bloqueo IP)
+    const workerUrl = `https://torrentio-proxy.actualizarcabel2.workers.dev/${torrentioConfig}/alldebrid=${CONFIG.AD_KEY}/stream/${type}/${id}.json`;
     
     try {
-        // Intentar via proxy local
-        const data = await fetchJSON(proxyUrl);
+        const data = await fetchJSON(workerUrl);
         if (data.streams && data.streams.length > 0) {
             return { streams: data.streams.map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
         }
     } catch (e) {}
     
-    try {
-        // Fallback: curl directo
-        const result = execSync(`curl -s -L --tlsv1.3 -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" -H "Accept: application/json" "${directUrl}"`, { timeout: 25000 });
-        const data = JSON.parse(result.toString());
-        return { streams: (data.streams || []).map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
-    } catch (e) {
-        return { streams: [] };
-    }
+    return { streams: [] };
 }
 
 // ============================================================
