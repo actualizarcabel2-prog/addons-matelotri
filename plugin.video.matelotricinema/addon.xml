@@ -2,7 +2,6 @@
 <addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="1.0.0" provider-name="Matelotri">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
-    <import addon="script.module.requests"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
