@@ -234,24 +234,12 @@ def search(content_type):
 
 
 def show_streams(stream_type, imdb_id):
-    """Muestra enlaces disponibles - llama a Torrentio directamente."""
+    """Muestra enlaces disponibles via servidor VPS."""
     dialog = xbmcgui.DialogProgress()
     dialog.create("Matelotri Cinema", "Buscando enlaces...")
-    dialog.update(20)
+    dialog.update(30)
 
-    # AllDebrid key del servidor
-    ad_key = "i5MI5R32vKVfOk3v46WA"
-    
-    # Llamar a Torrentio directamente desde el dispositivo
-    torrentio_url = "https://torrentio.strem.fun/alldebrid={}/stream/{}/{}.json".format(
-        ad_key, stream_type, imdb_id)
-    
-    try:
-        req = Request(torrentio_url, headers={"User-Agent": "Mozilla/5.0"})
-        resp = urlopen(req, timeout=15)
-        data = json.loads(resp.read().decode("utf-8"))
-    except Exception:
-        data = {}
+    data = api_get("stream/{}/{}.json".format(stream_type, imdb_id))
     
     streams = data.get("streams", [])
 

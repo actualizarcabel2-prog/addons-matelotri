@@ -174,7 +174,24 @@ function getManifest(deviceId) {
 function fetchJSON(url) {
     return new Promise((resolve) => {
         const mod = url.startsWith("https") ? https : http;
-        const req = mod.get(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }, timeout: 15000 }, (res) => {
+        const options = {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                "Accept-Encoding": "identity",
+                "Connection": "keep-alive",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "cross-site"
+            },
+            timeout: 20000
+        };
+        const req = mod.get(url, options, (res) => {
+            // Seguir redirects
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                return fetchJSON(res.headers.location).then(resolve);
+            }
             let data = "";
             res.on("data", c => data += c);
             res.on("end", () => { try { resolve(JSON.parse(data)); } catch { resolve({}); } });
@@ -306,7 +323,7 @@ function dashboardHTML(users) {
             const lastSeen = new Date(u.lastSeen).toLocaleString('es-ES');
             const phone = u.phone || "";
             const pass = u.generatedPass || "-";
-            rows += `<tr>
+            rows += `<tr onclick="toggleDetail('d_${u.id}')" style="cursor:pointer">
                 <td><b>${u.name}</b><br><small style="color:#666">${u.id.slice(0,8)}</small></td>
                 <td><span class="${statusClass}">${status}</span></td>
                 <td>${phone || '<span style="color:#555">-</span>'}</td>
@@ -316,12 +333,27 @@ function dashboardHTML(users) {
                 <td>${expires}</td>
                 <td>${u.requests}</td>
                 <td><small>${lastSeen}</small></td>
-                <td class="actions">
+                <td class="actions" onclick="event.stopPropagation()">
                     <button class="btn-sm ${u.active?'btn-red':'btn-green'}" onclick="toggleUser('${u.id}')">${u.active?'⏸':'▶'}</button>
                     <button class="btn-sm btn-gold" onclick="setPremium('${u.id}')">💎</button>
                     <button class="btn-sm btn-blue" onclick="editUser('${u.id}','${u.name}','${phone}')">✏️</button>
                     <button class="btn-sm btn-red" onclick="deleteUser('${u.id}','${u.name}')">🗑</button>
-                </td></tr>`;
+                </td></tr>
+            <tr class="detail-row" id="d_${u.id}" style="display:none">
+                <td colspan="10" style="background:#0d0d1a;padding:12px;border-left:3px solid #ffd700">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:.85em">
+                        <div>👤 <b>Nombre:</b> ${u.name}</div>
+                        <div>🆔 <b>ID:</b> ${u.id}</div>
+                        <div>📱 <b>Teléfono:</b> ${phone || 'Sin registrar'}</div>
+                        <div>🔑 <b>Contraseña:</b> ${pass}</div>
+                        <div>📅 <b>Registro:</b> ${created}</div>
+                        <div>⏱️ <b>Trial restante:</b> ${trialDays} días</div>
+                        <div>📊 <b>Peticiones:</b> ${u.requests}</div>
+                        <div>🕐 <b>Última conexión:</b> ${lastSeen}</div>
+                        <div>💎 <b>Premium expira:</b> ${expires}</div>
+                    </div>
+                </td>
+            </tr>`;
         }
         monthSections += `
         <div class="month-folder">
@@ -434,6 +466,7 @@ ${monthSections || '<p style="color:#666;padding:20px;text-align:center">No hay 
 </div>
 <script>
 const start=${Date.now()};let editingId="";
+function toggleDetail(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none'}
 setInterval(()=>document.getElementById("up").textContent=Math.floor((Date.now()-start)/60000),10000);
 document.getElementById("addonUrl").textContent=location.origin+"/${CONFIG.ACCESS_PASS}/manifest.json";
 // Abrir todas las carpetas del mes actual
