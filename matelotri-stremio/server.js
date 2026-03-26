@@ -6,6 +6,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 const crypto = require("crypto");
 
 const PORT = 7000;
@@ -150,6 +151,11 @@ function getManifest(deviceId) {
             { type: "movie", id: "matelotri-guerra", name: "⚔️ Guerra", extra: [{ name: "skip" }] },
             { type: "movie", id: "matelotri-crimen", name: "🔫 Crimen", extra: [{ name: "skip" }] },
             { type: "movie", id: "matelotri-fantasia", name: "🧙 Fantasía", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-historia", name: "📜 Historia", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-musica", name: "🎵 Música", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-misterio", name: "🔮 Misterio", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-western", name: "🤠 Western", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-deportes", name: "⚽ Deportes", extra: [{ name: "skip" }] },
             // Series
             { type: "series", id: "matelotri-series", name: "📺 Series Populares", extra: [{ name: "skip" }] },
             { type: "series", id: "matelotri-series-top", name: "🏆 Series Top", extra: [{ name: "skip" }] },
@@ -158,6 +164,17 @@ function getManifest(deviceId) {
             { type: "series", id: "matelotri-series-doc", name: "🎓 Docs Series", extra: [{ name: "skip" }] },
             { type: "series", id: "matelotri-series-drama", name: "🎭 Series Drama", extra: [{ name: "skip" }] },
             { type: "series", id: "matelotri-series-crimen", name: "🕵️ Series Crimen", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-accion", name: "💪 Series Acción", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-comedia", name: "😂 Series Comedia", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-kids", name: "👶 Infantil", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-misterio", name: "🔮 Series Misterio", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-reality", name: "📷 Reality", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-scifi", name: "🚀 Sci-Fi Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-soap", name: "💔 Telenovela", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-talk", name: "🎤 Talk Show", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-guerra", name: "⚔️ Guerra y Política", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-western", name: "🤠 Western Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-noticias", name: "📰 Noticias", extra: [{ name: "skip" }] },
             // Plataformas Películas
             { type: "movie", id: "matelotri-netflix", name: "🔴 Netflix Películas", extra: [{ name: "skip" }] },
             { type: "movie", id: "matelotri-amazon", name: "🔵 Amazon Películas", extra: [{ name: "skip" }] },
@@ -264,11 +281,27 @@ const GENRE_MAP = {
     "matelotri-guerra": { endpoint: "discover/movie", params: { with_genres: 10752 } },
     "matelotri-crimen": { endpoint: "discover/movie", params: { with_genres: 80 } },
     "matelotri-fantasia": { endpoint: "discover/movie", params: { with_genres: 14 } },
+    "matelotri-historia": { endpoint: "discover/movie", params: { with_genres: 36 } },
+    "matelotri-musica": { endpoint: "discover/movie", params: { with_genres: 10402 } },
+    "matelotri-misterio": { endpoint: "discover/movie", params: { with_genres: 9648 } },
+    "matelotri-western": { endpoint: "discover/movie", params: { with_genres: 37 } },
+    "matelotri-deportes": { endpoint: "discover/movie", params: { with_keywords: 6075 } },
     // Series
     "matelotri-series-anime": { endpoint: "discover/tv", params: { with_genres: 16 } },
     "matelotri-series-doc": { endpoint: "discover/tv", params: { with_genres: 99 } },
     "matelotri-series-drama": { endpoint: "discover/tv", params: { with_genres: 18 } },
     "matelotri-series-crimen": { endpoint: "discover/tv", params: { with_genres: 80 } },
+    "matelotri-series-accion": { endpoint: "discover/tv", params: { with_genres: 10759 } },
+    "matelotri-series-comedia": { endpoint: "discover/tv", params: { with_genres: 35 } },
+    "matelotri-series-kids": { endpoint: "discover/tv", params: { with_genres: 10762 } },
+    "matelotri-series-misterio": { endpoint: "discover/tv", params: { with_genres: 9648 } },
+    "matelotri-series-reality": { endpoint: "discover/tv", params: { with_genres: 10764 } },
+    "matelotri-series-scifi": { endpoint: "discover/tv", params: { with_genres: 10765 } },
+    "matelotri-series-soap": { endpoint: "discover/tv", params: { with_genres: 10766 } },
+    "matelotri-series-talk": { endpoint: "discover/tv", params: { with_genres: 10767 } },
+    "matelotri-series-guerra": { endpoint: "discover/tv", params: { with_genres: 10768 } },
+    "matelotri-series-western": { endpoint: "discover/tv", params: { with_genres: 37 } },
+    "matelotri-series-noticias": { endpoint: "discover/tv", params: { with_genres: 10763 } },
     // Plataformas Películas (with_watch_providers + watch_region=ES)
     "matelotri-netflix": { endpoint: "discover/movie", params: { with_watch_providers: 8, watch_region: "ES" } },
     "matelotri-amazon": { endpoint: "discover/movie", params: { with_watch_providers: 119, watch_region: "ES" } },
@@ -308,8 +341,14 @@ async function handleCatalog(type, id, extra) {
 
 async function handleStream(type, id) {
     const url = `https://torrentio.strem.fun/alldebrid=${CONFIG.AD_KEY}/stream/${type}/${id}.json`;
-    const data = await fetchJSON(url);
-    return { streams: (data.streams || []).map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
+    try {
+        const result = execSync(`curl -s -L -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -H "Accept: application/json" "${url}"`, { timeout: 25000 });
+        const data = JSON.parse(result.toString());
+        return { streams: (data.streams || []).map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
+    } catch (e) {
+        const data = await fetchJSON(url);
+        return { streams: (data.streams || []).map(s => ({ ...s, name: s.name ? `🎬 ${s.name}` : CONFIG.NAME })) };
+    }
 }
 
 // ============================================================
