@@ -267,32 +267,8 @@ def show_streams(stream_type, imdb_id):
     dialog.create("Matelotri Cinema", "Buscando enlaces...")
     dialog.update(30)
 
-    # Obtener AD_KEY del servidor
-    try:
-        config_data = api_get("manifest.json")
-        ad_key = ""
-        # Extraer del config si está disponible
-    except:
-        pass
-
-    # Pedir streams DIRECTO a Torrentio desde el dispositivo del usuario
-    # Esto evita el bloqueo de IP del VPS
-    torrentio_config = "sort=qualitysize|language=spanish|qualityfilter=other,scr,cam"
-    ad_key = "i5MI5R32vKVfOk3v46WA"  # AllDebrid key
-    torrentio_url = "https://torrentio.strem.fun/{}/alldebrid={}/stream/{}/{}.json".format(
-        torrentio_config, ad_key, stream_type, imdb_id)
-
-    try:
-        req = urllib2.Request(torrentio_url)
-        req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        req.add_header("Accept", "application/json")
-        resp = urllib2.urlopen(req, timeout=20)
-        import json as _json
-        data = _json.loads(resp.read())
-    except Exception as e:
-        xbmc.log("Matelotri: Error directo Torrentio: " + str(e), xbmc.LOGERROR)
-        # Fallback al VPS
-        data = api_get("stream/{}/{}.json".format(stream_type, imdb_id))
+    # Streams via servidor (que usa curl desde el PC)
+    data = api_get("stream/{}/{}.json".format(stream_type, imdb_id))
 
     streams = data.get("streams", [])
 
