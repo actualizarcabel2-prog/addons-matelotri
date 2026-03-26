@@ -262,24 +262,15 @@ def search(content_type):
 
 
 def show_streams(stream_type, imdb_id):
-    """Muestra enlaces — pide streams DIRECTO desde el dispositivo (no VPS)."""
-    dialog = xbmcgui.DialogProgress()
-    dialog.create("Matelotri Cinema", "Buscando enlaces...")
-    dialog.update(30)
-
-    # Streams via servidor (que usa curl desde el PC)
+    """Lista enlaces como items reproducibles dentro de la carpeta."""
     data = api_get("stream/{}/{}.json".format(stream_type, imdb_id))
-
     streams = data.get("streams", [])
-
-    dialog.update(80)
-    dialog.close()
 
     if not streams:
         xbmcgui.Dialog().ok("Matelotri Cinema", "No se encontraron enlaces")
         return
 
-    # Filtrar y simplificar: solo 4K, 1080p y 720p
+    # Filtrar: solo 4K, 1080p y 720p
     quality_4k = []
     quality_1080 = []
     quality_720 = []
@@ -289,7 +280,6 @@ def show_streams(stream_type, imdb_id):
             continue
         title = s.get("title", s.get("name", ""))
         t_upper = title.upper()
-        # Detectar calidad
         if "2160" in t_upper or "4K" in t_upper or "UHD" in t_upper:
             label = u"⭐ 4K"
             if "REMUX" in t_upper:
@@ -311,26 +301,24 @@ def show_streams(stream_type, imdb_id):
 
     playable = quality_4k + quality_1080 + quality_720
     if not playable:
-        # Si no hay 4K/1080p, coger los primeros 4
         for s in streams[:4]:
             url = s.get("url", "")
             if url:
                 playable.append({"title": u"🎬 Enlace", "url": url})
 
     if not playable:
-        xbmcgui.Dialog().ok("Matelotri Cinema", "No se encontraron enlaces reproducibles")
+        xbmcgui.Dialog().ok("Matelotri Cinema", "No hay enlaces reproducibles")
         return
 
-    if len(playable) == 1:
-        play_url(playable[0]["url"], playable[0]["title"])
-        return
+    # Listar como items reproducibles en la carpeta
+    for p in playable:
+        li = xbmcgui.ListItem(p["title"])
+        li.setProperty("IsPlayable", "true")
+        li.setInfo("video", {"title": p["title"]})
+        url = "{}?action=play&url={}".format(BASE_URL, quote_plus(p["url"]))
+        xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=False)
 
-    titles = [p["title"] for p in playable]
-    idx = xbmcgui.Dialog().select(
-        u"Elige calidad ({})".format(len(playable)), titles)
-
-    if idx >= 0:
-        play_url(playable[idx]["url"], playable[idx]["title"])
+    xbmcplugin.endOfDirectory(HANDLE)
 
 
 def play_url(url, title=""):
@@ -361,6 +349,8 @@ def router():
         search("series")
     elif action == "streams":
         show_streams(params["type"][0], params["id"][0])
+    elif action == "play":
+        play_url(params["url"][0], params.get("title", [""])[0])
     elif action.startswith("catalog/"):
         list_catalog(action)
     else:
