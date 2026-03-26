@@ -66,7 +66,7 @@ def _get_server():
             return None, None
         return cfg.get("server", ""), cfg.get("access_key", "")
     except Exception:
-        return (ADDON.getSetting("server_url") or "http://209.38.230.244:7000",
+        return (ADDON.getSetting("server_url") or "https://pump-iowa-train-bizrate.trycloudflare.com",
                 ADDON.getSetting("access_key") or "cabel1n3")
 
 
@@ -303,21 +303,55 @@ def show_streams(stream_type, imdb_id):
         xbmcgui.Dialog().ok("Matelotri Cinema", "No se encontraron enlaces")
         return
 
-    playable = []
+    # Filtrar y simplificar: solo 4K, 1080p y 720p
+    quality_4k = []
+    quality_1080 = []
+    quality_720 = []
     for s in streams:
         url = s.get("url", "")
-        title = s.get("title", s.get("name", "Enlace"))
-        if url:
-            playable.append({"title": title, "url": url})
+        if not url:
+            continue
+        title = s.get("title", s.get("name", ""))
+        t_upper = title.upper()
+        # Detectar calidad
+        if "2160" in t_upper or "4K" in t_upper or "UHD" in t_upper:
+            label = u"⭐ 4K"
+            if "REMUX" in t_upper:
+                label = u"⭐ 4K REMUX"
+            elif "HDR" in t_upper or "DV" in t_upper:
+                label = u"⭐ 4K HDR"
+            if len(quality_4k) < 3:
+                quality_4k.append({"title": label, "url": url})
+        elif "1080" in t_upper:
+            label = u"🎬 1080p"
+            if "REMUX" in t_upper:
+                label = u"🎬 1080p REMUX"
+            if len(quality_1080) < 3:
+                quality_1080.append({"title": label, "url": url})
+        elif "720" in t_upper:
+            label = u"📺 720p"
+            if len(quality_720) < 2:
+                quality_720.append({"title": label, "url": url})
+
+    playable = quality_4k + quality_1080 + quality_720
+    if not playable:
+        # Si no hay 4K/1080p, coger los primeros 4
+        for s in streams[:4]:
+            url = s.get("url", "")
+            if url:
+                playable.append({"title": u"🎬 Enlace", "url": url})
 
     if not playable:
-        names = [s.get("title", s.get("name", ""))[:60] for s in streams[:20]]
-        xbmcgui.Dialog().select("Enlaces encontrados ({})".format(len(streams)), names)
+        xbmcgui.Dialog().ok("Matelotri Cinema", "No se encontraron enlaces reproducibles")
         return
 
-    titles = [p["title"][:70] for p in playable[:15]]
+    if len(playable) == 1:
+        play_url(playable[0]["url"], playable[0]["title"])
+        return
+
+    titles = [p["title"] for p in playable]
     idx = xbmcgui.Dialog().select(
-        "Elige calidad ({} enlaces)".format(len(playable)), titles)
+        u"Elige calidad ({})".format(len(playable)), titles)
 
     if idx >= 0:
         play_url(playable[idx]["url"], playable[idx]["title"])
@@ -327,6 +361,7 @@ def play_url(url, title=""):
     """Reproduce URL directa."""
     li = xbmcgui.ListItem(title)
     li.setPath(url)
+    li.setProperty("IsPlayable", "true")
     li.setInfo("video", {"title": title})
     xbmcplugin.setResolvedUrl(HANDLE, True, li)
 
