@@ -149,7 +149,7 @@ function getManifest(deviceId) {
 function fetchJSON(url) {
     return new Promise((resolve) => {
         const mod = url.startsWith("https") ? https : http;
-        const req = mod.get(url, { headers: { "User-Agent": "MatelotriCinema/2.0" }, timeout: 6000 }, (res) => {
+        const req = mod.get(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }, timeout: 15000 }, (res) => {
             let data = "";
             res.on("data", c => data += c);
             res.on("end", () => { try { resolve(JSON.parse(data)); } catch { resolve({}); } });
@@ -171,7 +171,7 @@ async function tmdbGet(p, params = {}) {
 
 async function toMetas(results, type) {
     const metas = [];
-    for (const item of (results || []).slice(0, 20)) {
+    for (const item of (results || []).slice(0, 40)) {
         const title = item.title || item.name || "";
         const year = (item.release_date || item.first_air_date || "").slice(0, 4);
         let imdbId = item.imdb_id;
@@ -180,7 +180,8 @@ async function toMetas(results, type) {
             const d = await tmdbGet(ep);
             imdbId = d.imdb_id;
         }
-        if (!imdbId) continue;
+        // Usar tmdb:ID como fallback si no hay IMDB ID
+        if (!imdbId) imdbId = `tmdb:${item.id}`;
         metas.push({
             id: imdbId, type, name: title,
             poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : "",
@@ -203,7 +204,13 @@ async function handleCatalog(type, id, extra) {
         const st = type === "series" ? "tv" : "movie";
         data = await tmdbGet(`search/${st}`, { query: extra.search, page: skip });
     }
-    return { metas: await toMetas(data?.results || [], type) };
+    // Combinar con página siguiente para más resultados
+    let results = data?.results || [];
+    if (results.length >= 15 && !extra.search) {
+        const data2 = await tmdbGet(data?._endpoint || "", { page: skip + 1 });
+        if (data2?.results) results = results.concat(data2.results);
+    }
+    return { metas: await toMetas(results, type) };
 }
 
 async function handleStream(type, id) {
@@ -526,8 +533,19 @@ const server = http.createServer(async (req, res) => {
         const clientIP = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
         const deviceId = crypto.createHash("md5").update(clientIP).digest("hex").slice(0, 12);
         
-        // Registrar usuario si es nuevo
-        registerUser(deviceId);
+        // Registrar usuario con nombre/teléfono del header
+        const clientName = req.headers["x-client-name"] || "";
+        const clientPhone = req.headers["x-client-phone"] || "";
+        const user = registerUser(deviceId, clientName);
+        // Actualizar datos si vienen en headers
+        if (clientName || clientPhone) {
+            const users = loadUsers();
+            if (users[deviceId]) {
+                if (clientName) users[deviceId].name = clientName;
+                if (clientPhone) users[deviceId].phone = clientPhone;
+                saveUsers(users);
+            }
+        }
         
         // Verificar acceso
         const access = checkAccess(deviceId);

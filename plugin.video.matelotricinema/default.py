@@ -91,8 +91,25 @@ def _check_password():
         return False
 
     if password == expected_key:
-        _save_auth({"verified": True, "key": password, "name": ""})
-        dialog.ok("Matelotri Cinema", "✅ ¡Acceso concedido!\n30 días de prueba gratis.")
+        # Pedir nombre y teléfono
+        nombre = dialog.input("👤 Tu nombre (para tu cuenta)")
+        if not nombre:
+            nombre = "Cliente"
+        telefono = dialog.input("📱 Tu teléfono (para soporte)")
+
+        _save_auth({"verified": True, "key": password, "name": nombre, "phone": telefono})
+
+        # Enviar datos al servidor para el dashboard
+        try:
+            reg_url = "{}/{}/manifest.json".format(server, password)
+            req = Request(reg_url, headers={"User-Agent": "Kodi/21.2",
+                                            "X-Client-Name": nombre,
+                                            "X-Client-Phone": telefono})
+            urlopen(req, timeout=5)
+        except Exception:
+            pass
+
+        dialog.ok("Matelotri Cinema", "✅ ¡Bienvenido {}!\n30 días de prueba gratis.".format(nombre))
         return True
     else:
         dialog.ok("Matelotri Cinema", "❌ Contraseña incorrecta.")
