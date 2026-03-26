@@ -22,10 +22,26 @@ ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
 
-# Servidor Matelotri (cambiar cuando esté en VPS)
-SERVER = ADDON.getSetting("server_url") or "http://192.168.1.100:7000"
-ACCESS_KEY = ADDON.getSetting("access_key") or "cabel1n3"
-API = "{}/{}".format(SERVER.rstrip("/"), ACCESS_KEY)
+# Auto-descubrimiento del servidor via GitHub Pages
+CONFIG_URL = "https://raw.githubusercontent.com/actualizarcabel2-prog/addons-matelotri/main/matelotri-config.json"
+
+def _get_server():
+    """Obtiene URL del servidor desde GitHub (auto-actualizable)."""
+    try:
+        req = Request(CONFIG_URL, headers={"User-Agent": "Kodi/21.2"})
+        resp = urlopen(req, timeout=5)
+        cfg = json.loads(resp.read().decode("utf-8"))
+        if cfg.get("maintenance"):
+            xbmcgui.Dialog().ok("Matelotri Cinema", cfg.get("message", "En mantenimiento"))
+            return None, None
+        return cfg.get("server", ""), cfg.get("access_key", "cabel1n3")
+    except Exception:
+        # Fallback a settings locales
+        return (ADDON.getSetting("server_url") or "http://192.168.1.100:7000",
+                ADDON.getSetting("access_key") or "cabel1n3")
+
+SERVER, ACCESS_KEY = _get_server()
+API = "{}/{}".format(SERVER.rstrip("/"), ACCESS_KEY) if SERVER else ""
 
 MEDIA_PATH = os.path.join(ADDON.getAddonInfo("path"), "resources", "media")
 
