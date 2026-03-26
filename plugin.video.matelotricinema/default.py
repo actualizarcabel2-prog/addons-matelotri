@@ -8,22 +8,52 @@ import json
 
 try:
     from urllib.request import urlopen, Request
-    from urllib.parse import urlencode, quote_plus, parse_qs
+    from urllib.parse import quote_plus, parse_qs
 except ImportError:
     from urllib2 import urlopen, Request
-    from urllib import urlencode, quote_plus
+    from urllib import quote_plus
     from urlparse import parse_qs
 
+import xbmc
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
 
+try:
+    import xbmcvfs
+    translatePath = xbmcvfs.translatePath
+except AttributeError:
+    translatePath = xbmc.translatePath
+
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
+PROFILE = translatePath(ADDON.getAddonInfo("profile"))
 
 # Auto-descubrimiento del servidor via GitHub Pages
 CONFIG_URL = "https://raw.githubusercontent.com/actualizarcabel2-prog/addons-matelotri/main/matelotri-config.json"
+
+
+def _load_auth():
+    """Carga la contraseña guardada."""
+    auth_file = os.path.join(PROFILE, "auth.json")
+    if os.path.exists(auth_file):
+        try:
+            with open(auth_file, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _save_auth(data):
+    """Guarda contraseña para no volver a pedirla."""
+    if not os.path.exists(PROFILE):
+        os.makedirs(PROFILE)
+    auth_file = os.path.join(PROFILE, "auth.json")
+    with open(auth_file, "w") as f:
+        json.dump(data, f)
+
 
 def _get_server():
     """Obtiene URL del servidor desde GitHub (auto-actualizable)."""
@@ -34,14 +64,40 @@ def _get_server():
         if cfg.get("maintenance"):
             xbmcgui.Dialog().ok("Matelotri Cinema", cfg.get("message", "En mantenimiento"))
             return None, None
-        return cfg.get("server", ""), cfg.get("access_key", "cabel1n3")
+        return cfg.get("server", ""), cfg.get("access_key", "")
     except Exception:
-        # Fallback a settings locales
-        return (ADDON.getSetting("server_url") or "http://192.168.1.100:7000",
+        return (ADDON.getSetting("server_url") or "http://209.38.230.244:7000",
                 ADDON.getSetting("access_key") or "cabel1n3")
 
-SERVER, ACCESS_KEY = _get_server()
-API = "{}/{}".format(SERVER.rstrip("/"), ACCESS_KEY) if SERVER else ""
+
+def _check_password():
+    """Verifica contraseña. La pide una vez y la guarda para siempre."""
+    auth = _load_auth()
+    if auth.get("verified"):
+        return True
+
+    # Pedir contraseña
+    dialog = xbmcgui.Dialog()
+    password = dialog.input("🔑 Introduce la contraseña de Matelotri Cinema",
+                            type=xbmcgui.INPUT_ALPHANUM,
+                            option=xbmcgui.ALPHANUM_HIDE_INPUT)
+    if not password:
+        dialog.ok("Matelotri Cinema", "Se necesita contraseña para acceder.")
+        return False
+
+    # Verificar contra el servidor
+    server, expected_key = _get_server()
+    if not server:
+        return False
+
+    if password == expected_key:
+        _save_auth({"verified": True, "key": password, "name": ""})
+        dialog.ok("Matelotri Cinema", "✅ ¡Acceso concedido!\n30 días de prueba gratis.")
+        return True
+    else:
+        dialog.ok("Matelotri Cinema", "❌ Contraseña incorrecta.")
+        return False
+
 
 MEDIA_PATH = os.path.join(ADDON.getAddonInfo("path"), "resources", "media")
 
@@ -53,7 +109,10 @@ def get_icon(name):
 
 def api_get(endpoint):
     """Llama al servidor Matelotri."""
-    url = "{}/{}".format(API, endpoint)
+    auth = _load_auth()
+    server, _ = _get_server()
+    key = auth.get("key", "cabel1n3")
+    url = "{}/{}/{}".format(server.rstrip("/"), key, endpoint)
     try:
         req = Request(url, headers={"User-Agent": "Kodi/21.2"})
         resp = urlopen(req, timeout=12)
@@ -148,7 +207,6 @@ def show_streams(stream_type, imdb_id):
         xbmcgui.Dialog().ok("Matelotri Cinema", "No se encontraron enlaces")
         return
 
-    # Filtrar streams con URL directa
     playable = []
     for s in streams:
         url = s.get("url", "")
@@ -157,12 +215,10 @@ def show_streams(stream_type, imdb_id):
             playable.append({"title": title, "url": url})
 
     if not playable:
-        # Si no hay URLs directas, mostrar info
         names = [s.get("title", s.get("name", ""))[:60] for s in streams[:20]]
         xbmcgui.Dialog().select("Enlaces encontrados ({})".format(len(streams)), names)
         return
 
-    # Selector de calidad
     titles = [p["title"][:70] for p in playable[:15]]
     idx = xbmcgui.Dialog().select(
         "Elige calidad ({} enlaces)".format(len(playable)), titles)
@@ -181,10 +237,12 @@ def play_url(url, title=""):
 
 def router():
     """Router principal."""
-    import xbmc
     params = parse_qs(sys.argv[2].lstrip("?"))
-
     action = params.get("action", [None])[0]
+
+    # Verificar contraseña (solo la primera vez)
+    if not _check_password():
+        return
 
     if action is None:
         main_menu()
@@ -203,5 +261,4 @@ def router():
 
 
 if __name__ == "__main__":
-    import xbmc
     router()
