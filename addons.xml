@@ -1,29 +1,35 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
-  <addon id="repository.addons.matelotri" name="Matelotri Repository" version="1.1.9" provider-name="Matelotri">
-    <requires><import addon="xbmc.addon" version="12.0.0"/></requires>
-    <extension point="xbmc.addon.repository" name="Matelotri Repository">
-      <dir>
-        <info compressed="false">https://actualizarcabel2-prog.github.io/addons-matelotri/addons.xml</info>
-        <checksum>https://actualizarcabel2-prog.github.io/addons-matelotri/addons.xml.md5</checksum>
-        <datadir zip="true">https://actualizarcabel2-prog.github.io/addons-matelotri/</datadir>
-      </dir>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.addons.matelotri" name="Addons Matelotri" version="1.0.0" provider-name="Matelotri">
+    <extension point="xbmc.addon.repository" name="Addons Matelotri">
+        <dir>
+            <info compressed="false">https://actualizarcabel2-prog.github.io/addons-matelotri/addons.xml</info>
+            <checksum>https://actualizarcabel2-prog.github.io/addons-matelotri/addons.xml.md5</checksum>
+            <datadir zip="true">https://actualizarcabel2-prog.github.io/addons-matelotri/</datadir>
+        </dir>
     </extension>
     <extension point="xbmc.addon.metadata">
-      <summary>Matelotri Repository</summary>
-      <description>Repositorio oficial de Matelotri Cinema</description>
-      <platform>all</platform>
+        <platform>all</platform>
+        <summary lang="es_ES">Repositorio de Addons Matelotri</summary>
+        <description lang="es_ES">Repositorio oficial de addons Matelotri Cinema para Kodi.</description>
     </extension>
-  </addon>
-  <addon id="plugin.video.matelotricinema" name="Matelotri Cinema" version="1.0.0" provider-name="Matelotri">
-    <requires><import addon="xbmc.python" version="3.0.0"/></requires>
-    <extension point="xbmc.python.pluginsource" library="default.py">
-      <provides>video</provides>
-    </extension>
-    <extension point="xbmc.addon.metadata">
-      <description lang="es_ES">Matelotri Cinema - Tu cine en casa. Peliculas, Series, Anime en 4K.</description>
-      <platform>all</platform>
-      <assets><icon>icon.png</icon><fanart>fanart.png</fanart></assets>
-    </extension>
-  </addon>
+</addon>
+<addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="1.0.0" provider-name="Matelotri">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="script.module.requests"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <description lang="es_ES">Matelotri Cinema - Tu cine en casa.</description>
+    <platform>all</platform>
+    <assets>
+      <icon>icon.png</icon>
+      <fanart>fanart.png</fanart>
+    </assets>
+  </extension>
+</addon>
 </addons>
