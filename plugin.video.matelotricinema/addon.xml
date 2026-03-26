@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="1.0.2" provider-name="Matelotri">
+<addon id="plugin.video.matelotricinema" name="[COLOR gold]Matelotri Cinema[/COLOR]" version="1.0.3" provider-name="Matelotri">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
