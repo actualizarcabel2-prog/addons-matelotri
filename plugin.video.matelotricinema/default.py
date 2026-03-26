@@ -141,12 +141,37 @@ def api_get(endpoint):
 
 
 def main_menu():
-    """Menú principal."""
+    """Menú principal completo."""
     items = [
+        # --- PELÍCULAS ---
         ("🎬 Películas Populares", "catalog/movie/matelotri-populares.json", "peliculas"),
         ("🆕 Estrenos", "catalog/movie/matelotri-estrenos.json", "peliculas"),
         ("⭐ Mejor Valoradas", "catalog/movie/matelotri-top.json", "peliculas"),
+        ("🔥 Tendencias", "catalog/movie/matelotri-trending.json", "peliculas"),
+        # --- GÉNEROS PELÍCULAS ---
+        ("💥 Acción", "catalog/movie/matelotri-accion.json", "peliculas"),
+        ("😂 Comedia", "catalog/movie/matelotri-comedia.json", "peliculas"),
+        ("🎭 Drama", "catalog/movie/matelotri-drama.json", "peliculas"),
+        ("👻 Terror", "catalog/movie/matelotri-terror.json", "peliculas"),
+        ("🚀 Ciencia Ficción", "catalog/movie/matelotri-ciencia-ficcion.json", "peliculas"),
+        ("🎨 Animación", "catalog/movie/matelotri-animacion.json", "peliculas"),
+        ("📖 Documentales", "catalog/movie/matelotri-documentales.json", "documentales"),
+        ("🔪 Thriller", "catalog/movie/matelotri-thriller.json", "peliculas"),
+        ("❤️ Romance", "catalog/movie/matelotri-romance.json", "peliculas"),
+        ("🗺️ Aventura", "catalog/movie/matelotri-aventura.json", "peliculas"),
+        ("👨‍👩‍👧 Familia", "catalog/movie/matelotri-familia.json", "dibujos"),
+        ("⚔️ Guerra", "catalog/movie/matelotri-guerra.json", "peliculas"),
+        ("🔫 Crimen", "catalog/movie/matelotri-crimen.json", "peliculas"),
+        ("🧙 Fantasía", "catalog/movie/matelotri-fantasia.json", "peliculas"),
+        # --- SERIES ---
         ("📺 Series Populares", "catalog/series/matelotri-series.json", "series"),
+        ("🏆 Series Top", "catalog/series/matelotri-series-top.json", "series"),
+        ("📡 En Emisión", "catalog/series/matelotri-series-hoy.json", "series"),
+        ("🎌 Anime", "catalog/series/matelotri-series-anime.json", "anime"),
+        ("🎓 Docs Series", "catalog/series/matelotri-series-doc.json", "documentales"),
+        ("🎭 Series Drama", "catalog/series/matelotri-series-drama.json", "series"),
+        ("🕵️ Series Crimen", "catalog/series/matelotri-series-crimen.json", "series"),
+        # --- HERRAMIENTAS ---
         ("🔍 Buscar Película", "search_movie", "buscar"),
         ("🔍 Buscar Serie", "search_series", "buscar"),
         ("⚙️ Ajustes", "settings", "ajustes"),
@@ -209,12 +234,25 @@ def search(content_type):
 
 
 def show_streams(stream_type, imdb_id):
-    """Muestra enlaces disponibles."""
+    """Muestra enlaces disponibles - llama a Torrentio directamente."""
     dialog = xbmcgui.DialogProgress()
     dialog.create("Matelotri Cinema", "Buscando enlaces...")
-    dialog.update(30)
+    dialog.update(20)
 
-    data = api_get("stream/{}/{}.json".format(stream_type, imdb_id))
+    # AllDebrid key del servidor
+    ad_key = "i5MI5R32vKVfOk3v46WA"
+    
+    # Llamar a Torrentio directamente desde el dispositivo
+    torrentio_url = "https://torrentio.strem.fun/alldebrid={}/stream/{}/{}.json".format(
+        ad_key, stream_type, imdb_id)
+    
+    try:
+        req = Request(torrentio_url, headers={"User-Agent": "Mozilla/5.0"})
+        resp = urlopen(req, timeout=15)
+        data = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        data = {}
+    
     streams = data.get("streams", [])
 
     dialog.update(80)

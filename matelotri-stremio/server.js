@@ -130,16 +130,41 @@ function getManifest(deviceId) {
         logo: CONFIG.LOGO,
         background: CONFIG.BG,
         catalogs: [
+            // Películas
             { type: "movie", id: "matelotri-populares", name: "🎬 Populares", extra: [{ name: "skip" }] },
             { type: "movie", id: "matelotri-estrenos", name: "🆕 Estrenos", extra: [{ name: "skip" }] },
             { type: "movie", id: "matelotri-top", name: "⭐ Mejor Valoradas", extra: [{ name: "skip" }] },
-            { type: "series", id: "matelotri-series", name: "📺 Series", extra: [{ name: "skip" }] },
-            { type: "movie", id: "matelotri-buscar", name: "🔍 Buscar", extra: [{ name: "search", isRequired: true }] },
-            { type: "series", id: "matelotri-buscar-series", name: "🔍 Buscar Series", extra: [{ name: "search", isRequired: true }] },
+            { type: "movie", id: "matelotri-trending", name: "🔥 Tendencias", extra: [{ name: "skip" }] },
+            // Géneros Películas
+            { type: "movie", id: "matelotri-accion", name: "💥 Acción", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-comedia", name: "😂 Comedia", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-drama", name: "🎭 Drama", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-terror", name: "👻 Terror", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-ciencia-ficcion", name: "🚀 Ciencia Ficción", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-animacion", name: "🎨 Animación", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-documentales", name: "📖 Documentales", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-thriller", name: "🔪 Thriller", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-romance", name: "❤️ Romance", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-aventura", name: "🗺️ Aventura", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-familia", name: "👨‍👩‍👧 Familia", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-guerra", name: "⚔️ Guerra", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-crimen", name: "🔫 Crimen", extra: [{ name: "skip" }] },
+            { type: "movie", id: "matelotri-fantasia", name: "🧙 Fantasía", extra: [{ name: "skip" }] },
+            // Series
+            { type: "series", id: "matelotri-series", name: "📺 Series Populares", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-top", name: "🏆 Series Top", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-hoy", name: "📡 En Emisión", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-anime", name: "🎌 Anime", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-doc", name: "🎓 Docs Series", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-drama", name: "🎭 Series Drama", extra: [{ name: "skip" }] },
+            { type: "series", id: "matelotri-series-crimen", name: "🕵️ Series Crimen", extra: [{ name: "skip" }] },
+            // Búsqueda
+            { type: "movie", id: "matelotri-buscar", name: "🔍 Buscar Película", extra: [{ name: "search", isRequired: true }] },
+            { type: "series", id: "matelotri-buscar-series", name: "🔍 Buscar Serie", extra: [{ name: "search", isRequired: true }] },
         ],
         resources: ["catalog", "stream"],
         types: ["movie", "series"],
-        idPrefixes: ["tt"]
+        idPrefixes: ["tt", "tmdb"]
     };
 }
 
@@ -193,24 +218,51 @@ async function toMetas(results, type) {
     return metas;
 }
 
+// Mapa de géneros TMDb
+const GENRE_MAP = {
+    // Películas
+    "matelotri-accion": { endpoint: "discover/movie", params: { with_genres: 28 } },
+    "matelotri-comedia": { endpoint: "discover/movie", params: { with_genres: 35 } },
+    "matelotri-drama": { endpoint: "discover/movie", params: { with_genres: 18 } },
+    "matelotri-terror": { endpoint: "discover/movie", params: { with_genres: 27 } },
+    "matelotri-ciencia-ficcion": { endpoint: "discover/movie", params: { with_genres: 878 } },
+    "matelotri-animacion": { endpoint: "discover/movie", params: { with_genres: 16 } },
+    "matelotri-documentales": { endpoint: "discover/movie", params: { with_genres: 99 } },
+    "matelotri-thriller": { endpoint: "discover/movie", params: { with_genres: 53 } },
+    "matelotri-romance": { endpoint: "discover/movie", params: { with_genres: 10749 } },
+    "matelotri-aventura": { endpoint: "discover/movie", params: { with_genres: 12 } },
+    "matelotri-familia": { endpoint: "discover/movie", params: { with_genres: 10751 } },
+    "matelotri-guerra": { endpoint: "discover/movie", params: { with_genres: 10752 } },
+    "matelotri-crimen": { endpoint: "discover/movie", params: { with_genres: 80 } },
+    "matelotri-fantasia": { endpoint: "discover/movie", params: { with_genres: 14 } },
+    // Series
+    "matelotri-series-anime": { endpoint: "discover/tv", params: { with_genres: 16 } },
+    "matelotri-series-doc": { endpoint: "discover/tv", params: { with_genres: 99 } },
+    "matelotri-series-drama": { endpoint: "discover/tv", params: { with_genres: 18 } },
+    "matelotri-series-crimen": { endpoint: "discover/tv", params: { with_genres: 80 } },
+};
+
 async function handleCatalog(type, id, extra) {
     let data;
     const skip = extra.skip ? Math.floor(parseInt(extra.skip) / 20) + 1 : 1;
+    
     if (id === "matelotri-populares") data = await tmdbGet("movie/popular", { page: skip });
     else if (id === "matelotri-estrenos") data = await tmdbGet("movie/now_playing", { page: skip });
     else if (id === "matelotri-top") data = await tmdbGet("movie/top_rated", { page: skip });
+    else if (id === "matelotri-trending") data = await tmdbGet("trending/movie/week", { page: skip });
     else if (id === "matelotri-series") data = await tmdbGet("tv/popular", { page: skip });
+    else if (id === "matelotri-series-top") data = await tmdbGet("tv/top_rated", { page: skip });
+    else if (id === "matelotri-series-hoy") data = await tmdbGet("tv/on_the_air", { page: skip });
     else if (id.includes("buscar") && extra.search) {
         const st = type === "series" ? "tv" : "movie";
         data = await tmdbGet(`search/${st}`, { query: extra.search, page: skip });
     }
-    // Combinar con página siguiente para más resultados
-    let results = data?.results || [];
-    if (results.length >= 15 && !extra.search) {
-        const data2 = await tmdbGet(data?._endpoint || "", { page: skip + 1 });
-        if (data2?.results) results = results.concat(data2.results);
+    else if (GENRE_MAP[id]) {
+        const g = GENRE_MAP[id];
+        data = await tmdbGet(g.endpoint, { ...g.params, sort_by: "popularity.desc", page: skip });
     }
-    return { metas: await toMetas(results, type) };
+    
+    return { metas: await toMetas(data?.results || [], type) };
 }
 
 async function handleStream(type, id) {
